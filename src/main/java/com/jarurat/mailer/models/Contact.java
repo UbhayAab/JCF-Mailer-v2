@@ -25,4 +25,7 @@ public class Contact {
     public String getEmail() { return email; }
     public String getName() { return name; }
     public String getStatus() { return status; }
+
+    // Setters
+    public void setStatus(String status) { this.status = status; }
 }

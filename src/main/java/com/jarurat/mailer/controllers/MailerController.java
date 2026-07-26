@@ -1,4 +1,4 @@
-package com.jarurat.mailer.controllers;
+package com.jarurat.mailer.controllers; // Ensure package matches your project
 
 import com.jarurat.mailer.services.MailerService;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +21,6 @@ public class MailerController {
         return ResponseEntity.ok("Campaign triggered successfully! Check your terminal.");
     }
 
-    // NEW: The AWS SNS Webhook Endpoint
     @PostMapping("/sns-webhook")
     public ResponseEntity<String> handleSnsWebhook(
             @RequestHeader(value = "x-amz-sns-message-type", required = false) String messageType,
@@ -29,21 +28,29 @@ public class MailerController {
 
         System.out.println("🚨 AWS SNS WEBHOOK HIT!");
         
-        // AWS SNS sends a "SubscriptionConfirmation" message the very first time it connects.
-        // We have to parse this and visit the URL they provide to prove we own this server.
         if ("SubscriptionConfirmation".equals(messageType)) {
-            System.out.println("AWS is asking to confirm the subscription. Payload:");
+            System.out.println("AWS Subscription Confirmation Payload:");
             System.out.println(payload);
-            // In Phase 4, we will write the code to automatically visit the SubscribeURL.
         } 
-        // This handles the actual Bounces and Complaints
         else if ("Notification".equals(messageType)) {
-            System.out.println("AWS sent a Bounce or Complaint notification. Payload:");
-            System.out.println(payload);
-            // In Phase 4, we will extract the email address and update the database status to SUPPRESSED.
+            // Process the bounce/complaint JSON and update DB
+            mailerService.processSnsNotification(payload);
         }
 
-        // We must return 200 OK, otherwise AWS will think our server is down and keep retrying.
-        return ResponseEntity.ok("Webhook received and logged");
+        return ResponseEntity.ok("Webhook processed");
+    }
+
+    @GetMapping("/unsubscribe")
+    public ResponseEntity<String> unsubscribe(@RequestParam("email") String email) {
+        System.out.println("🛑 Unsubscribe link clicked for: " + email);
+        
+        mailerService.unsubscribeContact(email);
+        
+        // Return a clean, polite message to the doctor's web browser
+        String htmlResponse = "<html><body><h3>You have been successfully unsubscribed.</h3><p>You will no longer receive emails from Jarurat Care Foundation.</p></body></html>";
+        
+        return ResponseEntity.ok()
+                .header("Content-Type", "text/html")
+                .body(htmlResponse);
     }
 }
