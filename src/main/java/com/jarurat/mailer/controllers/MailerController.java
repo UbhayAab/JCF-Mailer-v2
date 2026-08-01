@@ -1,8 +1,9 @@
-package com.jarurat.mailer.controllers; // Ensure package matches your project
+package com.jarurat.mailer.controllers;
 
 import com.jarurat.mailer.services.MailerService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/mailer")
@@ -12,6 +13,23 @@ public class MailerController {
 
     public MailerController(MailerService mailerService) {
         this.mailerService = mailerService;
+    }
+
+    // NEW: Endpoint to receive the CSV file
+    @PostMapping("/contacts/upload")
+    public ResponseEntity<String> uploadContacts(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("Please upload a valid CSV file.");
+        }
+        
+        try {
+            System.out.println("📂 Receiving CSV file: " + file.getOriginalFilename());
+            mailerService.uploadContactsFromCsv(file);
+            return ResponseEntity.ok("CSV Uploaded and Contacts Saved Successfully!");
+        } catch (Exception e) {
+            System.err.println("❌ CSV Upload Failed: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Failed to upload: " + e.getMessage());
+        }
     }
 
     @GetMapping("/trigger-campaign")
@@ -33,21 +51,18 @@ public class MailerController {
             System.out.println(payload);
         } 
         else if ("Notification".equals(messageType)) {
-            // Process the bounce/complaint JSON and update DB
             mailerService.processSnsNotification(payload);
         }
 
         return ResponseEntity.ok("Webhook processed");
     }
 
-    // NEW: Looks for the token parameter instead of email
     @GetMapping("/unsubscribe")
     public ResponseEntity<String> unsubscribe(@RequestParam("token") String token) {
         System.out.println("🛑 Unsubscribe link clicked for token: " + token);
         
         mailerService.unsubscribeContact(token);
         
-        // Return a clean, polite message to the doctor's web browser
         String htmlResponse = "<html><body><h3>You have been successfully unsubscribed.</h3><p>You will no longer receive emails from Jarurat Care Foundation.</p></body></html>";
         
         return ResponseEntity.ok()
