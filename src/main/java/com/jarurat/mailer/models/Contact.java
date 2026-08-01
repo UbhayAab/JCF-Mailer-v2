@@ -11,6 +11,7 @@ public class Contact {
     private String email;
     private String name;
     private String status; // e.g., "CLEAN", "SUPPRESSED"
+    private String unsubscribeToken = java.util.UUID.randomUUID().toString();
 
     // Empty constructor required by Spring
     public Contact() {}
@@ -25,6 +26,7 @@ public class Contact {
     public String getEmail() { return email; }
     public String getName() { return name; }
     public String getStatus() { return status; }
+    public String getUnsubscribeToken() { return unsubscribeToken; }
 
     // Setters
     public void setStatus(String status) { this.status = status; }

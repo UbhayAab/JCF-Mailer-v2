@@ -40,11 +40,12 @@ public class MailerController {
         return ResponseEntity.ok("Webhook processed");
     }
 
+    // NEW: Looks for the token parameter instead of email
     @GetMapping("/unsubscribe")
-    public ResponseEntity<String> unsubscribe(@RequestParam("email") String email) {
-        System.out.println("🛑 Unsubscribe link clicked for: " + email);
+    public ResponseEntity<String> unsubscribe(@RequestParam("token") String token) {
+        System.out.println("🛑 Unsubscribe link clicked for token: " + token);
         
-        mailerService.unsubscribeContact(email);
+        mailerService.unsubscribeContact(token);
         
         // Return a clean, polite message to the doctor's web browser
         String htmlResponse = "<html><body><h3>You have been successfully unsubscribed.</h3><p>You will no longer receive emails from Jarurat Care Foundation.</p></body></html>";

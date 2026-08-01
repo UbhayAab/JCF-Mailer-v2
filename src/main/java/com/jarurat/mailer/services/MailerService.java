@@ -63,8 +63,8 @@ public class MailerService {
     }
 
     private void sendEmailViaSes(Contact contact) {
-        // Construct the Unsubscribe Link using your Elastic IP
-        String unsubscribeLink = "http://<ELASTIC_IP>/api/mailer/unsubscribe?email=" + contact.getEmail();
+        // Construct the Unsubscribe Link using the secure UUID Token
+        String unsubscribeLink = "http://<ELASTIC_IP>/api/mailer/unsubscribe?token=" + contact.getUnsubscribeToken();
 
         // Build the Email Content with the footer
         String emailBodyText = "Dear " + contact.getName() + ",\n\n"
@@ -74,7 +74,7 @@ public class MailerService {
                 + "If you no longer wish to receive these updates, click here to unsubscribe:\n"
                 + unsubscribeLink;
 
-        Content subject = Content.builder().data("Added Unsubscribe Button and Suppression Logic").build();
+        Content subject = Content.builder().data("Registration Confirmed: Horizon Oncology Summit 2026").build();
         Content body = Content.builder().data(emailBodyText).build();
         Body messageBody = Body.builder().text(body).build();
         Message message = Message.builder().subject(subject).body(messageBody).build();
@@ -143,13 +143,14 @@ public class MailerService {
         });
     }
 
-    public void unsubscribeContact(String email) {
-        contactRepository.findByEmail(email).ifPresentOrElse(contact -> {
+    // NEW: Now accepts a secure token instead of an email address
+    public void unsubscribeContact(String token) {
+        contactRepository.findByUnsubscribeToken(token).ifPresentOrElse(contact -> {
             contact.setStatus("UNSUBSCRIBED"); // Using a distinct status from BOUNCE
             contactRepository.save(contact);
-            System.out.println("✅ DATABASE UPDATED: " + email + " is now UNSUBSCRIBED.");
+            System.out.println("✅ DATABASE UPDATED: " + contact.getEmail() + " is now UNSUBSCRIBED.");
         }, () -> {
-            System.out.println("⚠️ Unsubscribe requested for unknown email: " + email);
+            System.out.println("⚠️ Unsubscribe requested for unknown token: " + token);
         });
     }
 }

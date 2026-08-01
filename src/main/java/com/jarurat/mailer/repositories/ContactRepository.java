@@ -13,4 +13,5 @@ public interface ContactRepository extends JpaRepository<Contact, Long> {
     List<Contact> findByStatus(String status);
     // Finds a specific contact by their email address
     Optional<Contact> findByEmail(String email);
+    Optional<Contact> findByUnsubscribeToken(String unsubscribeToken);
 }
