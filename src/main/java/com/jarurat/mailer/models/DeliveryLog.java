@@ -20,4 +20,10 @@ public class DeliveryLog {
         this.eventType = eventType;
         this.timestamp = timestamp;
     }
+
+    // NEW: Getters required for Thymeleaf UI
+    public Long getId() { return id; }
+    public String getRecipientEmail() { return recipientEmail; }
+    public String getEventType() { return eventType; }
+    public LocalDateTime getTimestamp() { return timestamp; }
 }

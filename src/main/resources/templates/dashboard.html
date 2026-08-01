@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>JCF Mailer Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-4 mb-5">
+    <h2 class="fw-bold text-primary">Jarurat Care Foundation</h2>
+    <p class="text-muted">Horizon Oncology Summit - Delivery Dashboard</p>
+
+    <!-- Live Analytics -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-success text-white text-center p-3 shadow-sm">
+                <h4>Clean / Ready</h4>
+                <h1 th:text="${totalClean}">0</h1>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-danger text-white text-center p-3 shadow-sm">
+                <h4>Bounced / Spam</h4>
+                <h1 th:text="${totalSuppressed}">0</h1>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-dark text-center p-3 shadow-sm">
+                <h4>Unsubscribed</h4>
+                <h1 th:text="${totalUnsubscribed}">0</h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- CSV Upload Studio -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white"><h5 class="mb-0">1. Audience Import</h5></div>
+                <div class="card-body">
+                    <input class="form-control mb-3" type="file" id="csvFile" accept=".csv">
+                    <button class="btn btn-outline-primary w-100" onclick="uploadCsv()">Upload Contacts</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- HTML Template Editor -->
+        <div class="col-md-8 mb-4">
+            <div class="card shadow-sm h-100 border-primary">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">2. Template Studio</h5>
+                    <small>Tags: {{NAME}}, {{UNSUBSCRIBE_LINK}}</small>
+                </div>
+                <div class="card-body">
+                    <input type="text" id="subject" class="form-control mb-2" placeholder="Email Subject" th:value="${template.subject}">
+                    <textarea id="htmlBody" class="form-control mb-3" rows="6" th:text="${template.htmlBody}"></textarea>
+                    
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-success" onclick="saveTemplate()">💾 Save Template</button>
+                        <button class="btn btn-danger shadow px-5" onclick="triggerCampaign()">🔥 TRIGGER CAMPAIGN</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Delivery Logs -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white"><h5 class="mb-0">Recent Delivery Activity</h5></div>
+        <div class="card-body p-0">
+            <table class="table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Email Address</th>
+                        <th>Event Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="log : ${recentLogs}">
+                        <td th:text="${#temporals.format(log.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                        <td th:text="${log.recipientEmail}"></td>
+                        <td><span class="badge bg-secondary" th:text="${log.eventType}"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function uploadCsv() {
+        const file = document.getElementById('csvFile').files[0];
+        if (!file) { alert("Select a file!"); return; }
+        let formData = new FormData();
+        formData.append("file", file);
+        
+        let res = await fetch('/api/mailer/contacts/upload', { method: 'POST', body: formData });
+        alert(await res.text());
+        location.reload();
+    }
+
+    async function saveTemplate() {
+        let formData = new URLSearchParams();
+        formData.append("subject", document.getElementById('subject').value);
+        formData.append("htmlBody", document.getElementById('htmlBody').value);
+        
+        let res = await fetch('/template/save', { method: 'POST', body: formData });
+        alert(await res.text());
+        location.reload();
+    }
+
+    async function triggerCampaign() {
+        if(confirm("Fire the campaign to all Clean contacts?")) {
+            let res = await fetch('/api/mailer/trigger-campaign');
+            alert(await res.text());
+            setTimeout(() => location.reload(), 2000); // Reload after 2s to show updated logs
+        }
+    }
+</script>
+</body>
+</html>

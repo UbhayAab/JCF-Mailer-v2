@@ -2,8 +2,10 @@ package com.jarurat.mailer.services;
 
 import com.jarurat.mailer.models.Contact;
 import com.jarurat.mailer.models.DeliveryLog;
+import com.jarurat.mailer.models.Template;
 import com.jarurat.mailer.repositories.ContactRepository;
 import com.jarurat.mailer.repositories.DeliveryLogRepository;
+import com.jarurat.mailer.repositories.TemplateRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,21 +27,23 @@ public class MailerService {
 
     private final ContactRepository contactRepository;
     private final DeliveryLogRepository deliveryLogRepository;
+    private final TemplateRepository templateRepository;
     private final SesV2Client sesClient;
     private final String fromEmail;
     private final ObjectMapper objectMapper = new ObjectMapper();
     
-    // Virtual Thread Executor for high-throughput concurrency
     private final ExecutorService virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     public MailerService(
             ContactRepository contactRepository, 
             DeliveryLogRepository deliveryLogRepository,
+            TemplateRepository templateRepository,
             @Value("${aws.region}") String regionString,
             @Value("${aws.ses.fromEmail}") String fromEmail) {
             
         this.contactRepository = contactRepository;
         this.deliveryLogRepository = deliveryLogRepository;
+        this.templateRepository = templateRepository;
         this.fromEmail = fromEmail;
 
         this.sesClient = SesV2Client.builder()
@@ -51,25 +55,14 @@ public class MailerService {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
             String line;
             boolean isFirstLine = true;
-            
             while ((line = br.readLine()) != null) {
-                if (isFirstLine) {
-                    isFirstLine = false;
-                    continue;
-                }
-                
+                if (isFirstLine) { isFirstLine = false; continue; }
                 String[] data = line.split(",");
                 if (data.length >= 2) {
                     String name = data[0].trim();
                     String email = data[1].trim();
-                    
-                    // UPDATED: Now uses the safe boolean check
                     if (!contactRepository.existsByEmail(email)) {
-                        Contact newContact = new Contact(email, name, "CLEAN");
-                        contactRepository.save(newContact);
-                        System.out.println("📥 Imported Contact: " + name + " (" + email + ")");
-                    } else {
-                        System.out.println("⏭️ Skipped Duplicate: " + email);
+                        contactRepository.save(new Contact(email, name, "CLEAN"));
                     }
                 }
             }
@@ -77,13 +70,17 @@ public class MailerService {
     }
 
     public void runCampaignSimulation() {
+        // Fetch the active template from DB
+        Template template = templateRepository.findById(1L)
+            .orElseThrow(() -> new RuntimeException("No template found! Please save one in the dashboard."));
+
         List<Contact> cleanContacts = contactRepository.findByStatus("CLEAN");
         System.out.println("🚀 Preparing to push " + cleanContacts.size() + " emails to AWS SES...");
 
         for (Contact contact : cleanContacts) {
             virtualThreadExecutor.submit(() -> {
                 try {
-                    sendEmailViaSes(contact);
+                    sendEmailViaSes(contact, template);
                 } catch (Exception e) {
                     System.err.println("❌ Failed to send to " + contact.getEmail() + ": " + e.getMessage());
                 }
@@ -91,19 +88,19 @@ public class MailerService {
         }
     }
 
-    private void sendEmailViaSes(Contact contact) {
+    private void sendEmailViaSes(Contact contact, Template template) {
         String unsubscribeLink = "http://<ELASTIC_IP>/api/mailer/unsubscribe?token=" + contact.getUnsubscribeToken();
 
-        String emailBodyText = "Dear " + contact.getName() + ",\n\n"
-                + "Thank you for registering for the Horizon Summit. Your secure webinar link is attached.\n\n"
-                + "Best,\nJarurat Care Foundation\n\n"
-                + "--------------------------------------------------\n"
-                + "If you no longer wish to receive these updates, click here to unsubscribe:\n"
-                + unsubscribeLink;
+        // Dynamically replace tags in the HTML
+        String personalizedHtml = template.getHtmlBody()
+                .replace("{{NAME}}", contact.getName())
+                .replace("{{UNSUBSCRIBE_LINK}}", unsubscribeLink);
 
-        Content subject = Content.builder().data("Registration Confirmed: Horizon Oncology Summit 2026").build();
-        Content body = Content.builder().data(emailBodyText).build();
-        Body messageBody = Body.builder().text(body).build();
+        Content subject = Content.builder().data(template.getSubject()).build();
+        Content body = Content.builder().data(personalizedHtml).build();
+        
+        // UPDATED: Now building as HTML instead of Text!
+        Body messageBody = Body.builder().html(body).build(); 
         Message message = Message.builder().subject(subject).body(messageBody).build();
 
         Destination destination = Destination.builder().toAddresses(contact.getEmail()).build();
@@ -117,10 +114,10 @@ public class MailerService {
 
         SendEmailResponse response = sesClient.sendEmail(request);
 
-        DeliveryLog log = new DeliveryLog(contact.getEmail(), "SENT_SES_MESSAGE_ID: " + response.messageId(), LocalDateTime.now());
+        DeliveryLog log = new DeliveryLog(contact.getEmail(), "SENT", LocalDateTime.now());
         deliveryLogRepository.save(log);
         
-        System.out.println("✅ AWS SES Dispatched: " + contact.getEmail() + " | Thread: " + Thread.currentThread());
+        System.out.println("✅ AWS SES Dispatched: " + contact.getEmail());
     }
 
     public void processSnsNotification(String payload) {
@@ -148,18 +145,15 @@ public class MailerService {
         }
     }
 
-    // UPDATED: Now handles multiple duplicate records seamlessly 
     private void suppressContact(String email, String reason) {
         List<Contact> contacts = contactRepository.findByEmail(email);
-        
         if (!contacts.isEmpty()) {
             for (Contact contact : contacts) {
                 contact.setStatus("SUPPRESSED");
                 contactRepository.save(contact);
             }
-            System.out.println("🚨 CONTACT(S) SUPPRESSED: " + email + " | Reason: " + reason);
-        } else {
-            System.out.println("⚠️ Bounce/Complaint received for untracked email: " + email);
+            // Log suppression in Delivery Logs too!
+            deliveryLogRepository.save(new DeliveryLog(email, "SUPPRESSED (" + reason + ")", LocalDateTime.now()));
         }
     }
 
@@ -167,9 +161,7 @@ public class MailerService {
         contactRepository.findByUnsubscribeToken(token).ifPresentOrElse(contact -> {
             contact.setStatus("UNSUBSCRIBED"); 
             contactRepository.save(contact);
-            System.out.println("✅ DATABASE UPDATED: " + contact.getEmail() + " is now UNSUBSCRIBED.");
-        }, () -> {
-            System.out.println("⚠️ Unsubscribe requested for unknown token: " + token);
-        });
+            deliveryLogRepository.save(new DeliveryLog(contact.getEmail(), "UNSUBSCRIBED", LocalDateTime.now()));
+        }, () -> {});
     }
 }
