@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;800&display=swap');
+
+:root {
+    --bg-base: #07090f;
+    --primary: #3b82f6;
+    --accent: #8b5cf6;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --text-main: #ffffff;
+    --text-muted: #cbd5e1; 
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+body {
+    background-color: var(--bg-base);
+    color: var(--text-main);
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+.text-muted { color: var(--text-muted) !important; }
+
+/* Animated Aurora Background */
+.aurora-bg {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: -1; overflow: hidden;
+}
+.aurora-blob-1, .aurora-blob-2 {
+    position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.35;
+}
+.aurora-blob-1 {
+    width: 60vw; height: 60vw; background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+    top: -20%; left: -10%; animation: float 12s infinite alternate;
+}
+.aurora-blob-2 {
+    width: 50vw; height: 50vw; background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+    bottom: -20%; right: -10%; animation: float 14s infinite alternate-reverse;
+}
+@keyframes float { 0% { transform: translate(0, 0); } 100% { transform: translate(80px, 60px); } }
+
+/* Glassmorphism */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+.glass-header { border-bottom: 1px solid var(--glass-border); padding: 16px 24px; }
+.glass-body { padding: 24px; }
+
+/* Buttons */
+.btn-premium {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: #fff; font-weight: 600; border: none; border-radius: 8px; padding: 12px 24px;
+    transition: all 0.3s ease; display: inline-flex; justify-content: center; align-items: center; text-decoration: none;
+}
+.btn-premium:hover { transform: translateY(-2px); box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); color: #fff; }
+
+.btn-glass {
+    background: rgba(255, 255, 255, 0.05); color: var(--text-main); font-weight: 500;
+    border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px 24px;
+    transition: all 0.3s ease; text-decoration: none; display: inline-block;
+}
+.btn-glass:hover { background: rgba(255, 255, 255, 0.15); color: #fff; border-color: rgba(255, 255, 255, 0.2); }
+
+/* --- UI FIXES START HERE --- */
+
+/* 1. Forces input boxes to have bright white text */
+.form-control, .form-select {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--glass-border) !important;
+    color: #ffffff !important; 
+    border-radius: 8px; padding: 12px 16px;
+}
+
+/* 2. Forces placeholder text to be visible */
+.form-control::placeholder {
+    color: #94a3b8 !important;
+    opacity: 0.8;
+}
+
+.form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+    border-color: var(--primary) !important;
+}
+.form-label { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+
+/* 3. Forces the Dropdown Options to have a dark background so white text is visible */
+select option {
+    background-color: var(--bg-base) !important;
+    color: #ffffff !important;
+}
+
+/* 4. Fixes Chrome Autofill from turning your dark mode inputs white */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 30px var(--bg-base) inset !important;
+    -webkit-text-fill-color: #ffffff !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* --- UI FIXES END --- */
+
+.text-gradient {
+    background: linear-gradient(135deg, #ffffff, #cbd5e1);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.animate-fade-up { opacity: 0; transform: translateY(30px); animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.delay-100 { animation-delay: 0.1s; } .delay-200 { animation-delay: 0.2s; } .delay-300 { animation-delay: 0.3s; }
+@keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }

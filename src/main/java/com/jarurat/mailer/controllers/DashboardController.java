@@ -3,6 +3,7 @@ package com.jarurat.mailer.controllers;
 import com.jarurat.mailer.models.*;
 import com.jarurat.mailer.repositories.*;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,14 +27,49 @@ public class DashboardController {
         this.contactRepository = contactRepository; this.campaignRepository = campaignRepository; this.globalSuppressionRepository = globalSuppressionRepository; this.deliveryLogRepository = deliveryLogRepository;
     }
 
+    // --- NEW: AUTHENTICATION & ROUTING --- //
+
     @GetMapping("/")
-    public String showDashboard(Model model) {
+    public String landing() {
+        return "landing"; 
+    }
+
+    @GetMapping("/login")
+    public String loginPage() {
+        return "login";
+    }
+
+    @PostMapping("/login")
+    public String doLogin(@RequestParam String email, @RequestParam String password, HttpSession session, Model model) {
+        if ("mailer@jarurat.care".equals(email) && "Mailer123@".equals(password)) {
+            session.setAttribute("admin", true);
+            return "redirect:/dashboard";
+        }
+        model.addAttribute("error", "Invalid credentials. Please try again.");
+        return "login";
+    }
+
+    @GetMapping("/logout")
+    public String logout(HttpSession session) {
+        session.invalidate();
+        return "redirect:/";
+    }
+
+    @GetMapping("/dashboard")
+    public String showDashboard(HttpSession session, Model model) {
+        // Protect the dashboard route
+        if (session.getAttribute("admin") == null) {
+            return "redirect:/login";
+        }
+        
         model.addAttribute("totalUnsubscribed", globalSuppressionRepository.countByReason("UNSUBSCRIBED"));
         model.addAttribute("totalBounces", globalSuppressionRepository.countByReason("BOUNCE"));
         model.addAttribute("campaigns", campaignRepository.findAll());
         model.addAttribute("recentLogs", deliveryLogRepository.findTop10ByOrderByTimestampDesc());
         return "dashboard"; 
     }
+
+    // --- EXISTING APIs (Unchanged) --- //
 
     @GetMapping("/api/campaign/{name}")
     @ResponseBody
@@ -68,8 +104,6 @@ public class DashboardController {
     public void exportCsv(@RequestParam("campaignName") String campaignName, @RequestParam("type") String type, HttpServletResponse response) throws Exception {
         response.setContentType("text/csv");
         response.setHeader("Content-Disposition", "attachment; filename=\"" + campaignName + "_" + type + ".csv\"");
-        
-        // Excludes unsubscribers automatically!
         List<Contact> contacts = type.equals("CLICKED") 
                 ? contactRepository.findByCampaignNameAndClickedUrlIsNotNullAndStatusNot(campaignName, "UNSUBSCRIBED")
                 : contactRepository.findByCampaignNameAndClickedUrlIsNullAndStatusNot(campaignName, "UNSUBSCRIBED");
