@@ -2,120 +2,176 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>JCF Mailer Dashboard</title>
+    <title>JCF Campaign Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Include Bootstrap JS for Tabs -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body class="bg-light">
-
 <div class="container mt-4 mb-5">
-    <h2 class="fw-bold text-primary">Jarurat Care Foundation</h2>
-    <p class="text-muted">Horizon Oncology Summit - Delivery Dashboard</p>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-primary">JCF Campaign Studio</h2>
+            <p class="text-muted">Multi-Campaign Engine with Link Tracking</p>
+        </div>
+        <div class="d-flex gap-2">
+            <div class="alert alert-warning mb-0"><strong>Unsubscribed:</strong> <span th:text="${totalUnsubscribed}">0</span></div>
+            <div class="alert alert-danger mb-0"><strong>Bounces/Spam:</strong> <span th:text="${totalBounces}">0</span></div>
+        </div>
+    </div>
 
-    <!-- Live Analytics -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card bg-success text-white text-center p-3 shadow-sm">
-                <h4>Clean / Ready</h4>
-                <h1 th:text="${totalClean}">0</h1>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-danger text-white text-center p-3 shadow-sm">
-                <h4>Bounced / Spam</h4>
-                <h1 th:text="${totalSuppressed}">0</h1>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-warning text-dark text-center p-3 shadow-sm">
-                <h4>Unsubscribed</h4>
-                <h1 th:text="${totalUnsubscribed}">0</h1>
-            </div>
+    <!-- Campaign Selector -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-dark text-white"><h5 class="mb-0">1. Select or Create Campaign</h5></div>
+        <div class="card-body d-flex gap-3">
+            <select id="campaignSelect" class="form-select w-50" onchange="loadCampaign()">
+                <option value="">-- Create New Campaign --</option>
+                <option th:each="camp : ${campaigns}" th:value="${camp.name}" th:text="${camp.name}"></option>
+            </select>
+            <input type="text" id="campaignNameInput" class="form-control w-50" placeholder="Type new campaign name (e.g., Summit_Invite)">
         </div>
     </div>
 
     <div class="row">
-        <!-- CSV Upload Studio -->
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-white"><h5 class="mb-0">1. Audience Import</h5></div>
-                <div class="card-body">
-                    <input class="form-control mb-3" type="file" id="csvFile" accept=".csv">
-                    <button class="btn btn-outline-primary w-100" onclick="uploadCsv()">Upload Contacts</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- HTML Template Editor -->
-        <div class="col-md-8 mb-4">
+        <!-- Content Studio with Tabs -->
+        <div class="col-md-7 mb-4">
             <div class="card shadow-sm h-100 border-primary">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">2. Template Studio</h5>
-                    <small>Tags: {{NAME}}, {{UNSUBSCRIBE_LINK}}</small>
+                    <small>Tag: &lt;a href="{{TRACK:http://<ELASTIC_IP>/api/mailer/success}}"&gt;Reserve&lt;/a&gt;</small>
                 </div>
                 <div class="card-body">
-                    <input type="text" id="subject" class="form-control mb-2" placeholder="Email Subject" th:value="${template.subject}">
-                    <textarea id="htmlBody" class="form-control mb-3" rows="6" th:text="${template.htmlBody}"></textarea>
+                    <input type="text" id="subject" class="form-control mb-3" placeholder="Email Subject">
                     
+                    <!-- HTML AND PREVIEW TABS -->
+                    <ul class="nav nav-tabs mb-2" id="editorTabs">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#code">Code Editor</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#preview" onclick="updatePreview()">Live Preview</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content mb-3">
+                        <div class="tab-pane fade show active" id="code">
+                            <textarea id="htmlBody" class="form-control" rows="8" placeholder="Paste HTML here..."></textarea>
+                        </div>
+                        <div class="tab-pane fade" id="preview">
+                            <iframe id="previewFrame" style="width:100%; height:200px; border:1px solid #ccc; border-radius:4px; background:#fff;"></iframe>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-light border rounded mb-3">
+                        <h6>Audience Upload</h6>
+                        <input class="form-control mb-2" type="file" id="csvFile" accept=".csv">
+                        <div id="campaignStats" class="fw-bold text-success mt-2">Audience: 0 Ready | 0 Sent</div>
+                    </div>
+
                     <div class="d-flex justify-content-between">
-                        <button class="btn btn-success" onclick="saveTemplate()">💾 Save Template</button>
-                        <button class="btn btn-danger shadow px-5" onclick="triggerCampaign()">🔥 TRIGGER CAMPAIGN</button>
+                        <button class="btn btn-success px-4" onclick="saveAndUpload()">💾 Save & Upload CSV</button>
+                        <button class="btn btn-danger shadow px-4" onclick="triggerCampaign()">🔥 TRIGGER CAMPAIGN</button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Recent Delivery Logs -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-dark text-white"><h5 class="mb-0">Recent Delivery Activity</h5></div>
-        <div class="card-body p-0">
-            <table class="table table-striped mb-0">
-                <thead>
-                    <tr>
-                        <th>Timestamp</th>
-                        <th>Email Address</th>
-                        <th>Event Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="log : ${recentLogs}">
-                        <td th:text="${#temporals.format(log.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></td>
-                        <td th:text="${log.recipientEmail}"></td>
-                        <td><span class="badge bg-secondary" th:text="${log.eventType}"></span></td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- Export & Control -->
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-secondary text-white"><h5 class="mb-0">3. Campaign Actions</h5></div>
+                <div class="card-body d-flex flex-column gap-3">
+                    <button class="btn btn-outline-primary" onclick="exportCsv('CLICKED')">📥 Download "Action Taken" CSV</button>
+                    <button class="btn btn-outline-secondary" onclick="exportCsv('NO_ACTION')">📥 Download "No Action" CSV</button>
+                    <hr>
+                    <button class="btn btn-outline-danger mt-auto" onclick="deleteCampaign()">🗑️ Delete Entire Campaign</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    async function uploadCsv() {
-        const file = document.getElementById('csvFile').files[0];
-        if (!file) { alert("Select a file!"); return; }
-        let formData = new FormData();
-        formData.append("file", file);
-        
-        let res = await fetch('/api/mailer/contacts/upload', { method: 'POST', body: formData });
-        alert(await res.text());
-        location.reload();
+    function getActiveCampaign() {
+        return document.getElementById('campaignSelect').value || document.getElementById('campaignNameInput').value;
     }
 
-    async function saveTemplate() {
-        let formData = new URLSearchParams();
-        formData.append("subject", document.getElementById('subject').value);
-        formData.append("htmlBody", document.getElementById('htmlBody').value);
+    function updatePreview() {
+        let html = document.getElementById('htmlBody').value;
+        // Mock the variables so the preview looks realistic
+        html = html.replace(/{{NAME}}/g, "Dr. Smith").replace(/{{UNSUBSCRIBE_LINK}}/g, "#");
+        document.getElementById('previewFrame').srcdoc = html;
+    }
+
+    async function loadCampaign() {
+        let name = document.getElementById('campaignSelect').value;
+        if(name) {
+            document.getElementById('campaignNameInput').value = name;
+            let res = await fetch('/api/campaign/' + name);
+            let data = await res.json();
+            
+            document.getElementById('subject').value = data.subject || "";
+            document.getElementById('htmlBody').value = data.htmlBody || "";
+            document.getElementById('campaignStats').innerText = `Audience: ${data.cleanCount} Ready | ${data.sentCount} Sent`;
+            updatePreview();
+        } else {
+            document.getElementById('campaignNameInput').value = "";
+            document.getElementById('subject').value = "";
+            document.getElementById('htmlBody').value = "";
+            document.getElementById('campaignStats').innerText = "Audience: 0 Ready | 0 Sent";
+            document.getElementById('previewFrame').srcdoc = "";
+        }
+    }
+
+    async function saveAndUpload() {
+        let name = getActiveCampaign();
+        if(!name) return alert("Please specify a Campaign Name!");
         
-        let res = await fetch('/template/save', { method: 'POST', body: formData });
-        alert(await res.text());
-        location.reload();
+        let data = new URLSearchParams();
+        data.append("campaignName", name);
+        data.append("subject", document.getElementById('subject').value);
+        data.append("htmlBody", document.getElementById('htmlBody').value);
+        await fetch('/template/save', { method: 'POST', body: data });
+
+        const file = document.getElementById('csvFile').files[0];
+        if (file) {
+            let formData = new FormData();
+            formData.append("file", file);
+            formData.append("campaignName", name);
+            let uploadRes = await fetch('/api/mailer/contacts/upload', { method: 'POST', body: formData });
+            alert(await uploadRes.text());
+            document.getElementById('csvFile').value = "";
+        } else {
+            alert("Template Saved! (No CSV was selected)");
+        }
+        
+        loadCampaign(); 
     }
 
     async function triggerCampaign() {
-        if(confirm("Fire the campaign to all Clean contacts?")) {
-            let res = await fetch('/api/mailer/trigger-campaign');
+        let name = getActiveCampaign();
+        if(!name) return alert("Select a campaign first!");
+        
+        if(confirm("Fire " + name + " to all Ready contacts?")) {
+            let res = await fetch('/api/mailer/trigger-campaign?campaignName=' + name, { method: 'POST' });
             alert(await res.text());
-            setTimeout(() => location.reload(), 2000); // Reload after 2s to show updated logs
+            loadCampaign(); 
+        }
+    }
+
+    function exportCsv(type) {
+        let name = getActiveCampaign();
+        if(!name) return alert("Select a campaign first.");
+        window.location.href = `/api/export?campaignName=${name}&type=${type}`;
+    }
+
+    async function deleteCampaign() {
+        let name = getActiveCampaign();
+        if(confirm(`DELETE ${name}? This wipes contacts and templates, but keeps the Global Suppression list safe.`)) {
+            let data = new URLSearchParams(); data.append("campaignName", name);
+            let res = await fetch('/api/campaign/delete', { method: 'POST', body: data });
+            alert(await res.text());
+            location.reload(); 
         }
     }
 </script>

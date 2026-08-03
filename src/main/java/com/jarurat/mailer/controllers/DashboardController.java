@@ -1,60 +1,83 @@
 package com.jarurat.mailer.controllers;
 
-import com.jarurat.mailer.models.Template;
-import com.jarurat.mailer.repositories.ContactRepository;
-import com.jarurat.mailer.repositories.DeliveryLogRepository;
-import com.jarurat.mailer.repositories.TemplateRepository;
+import com.jarurat.mailer.models.*;
+import com.jarurat.mailer.repositories.*;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 public class DashboardController {
 
     private final ContactRepository contactRepository;
+    private final CampaignRepository campaignRepository;
+    private final GlobalSuppressionRepository globalSuppressionRepository;
     private final DeliveryLogRepository deliveryLogRepository;
-    private final TemplateRepository templateRepository;
 
-    public DashboardController(ContactRepository contactRepository, DeliveryLogRepository deliveryLogRepository, TemplateRepository templateRepository) {
-        this.contactRepository = contactRepository;
-        this.deliveryLogRepository = deliveryLogRepository;
-        this.templateRepository = templateRepository;
+    public DashboardController(ContactRepository contactRepository, CampaignRepository campaignRepository, GlobalSuppressionRepository globalSuppressionRepository, DeliveryLogRepository deliveryLogRepository) {
+        this.contactRepository = contactRepository; this.campaignRepository = campaignRepository; this.globalSuppressionRepository = globalSuppressionRepository; this.deliveryLogRepository = deliveryLogRepository;
     }
 
     @GetMapping("/")
     public String showDashboard(Model model) {
-        // Fetch Stats
-        model.addAttribute("totalClean", contactRepository.countByStatus("CLEAN"));
-        model.addAttribute("totalSuppressed", contactRepository.countByStatus("SUPPRESSED"));
-        model.addAttribute("totalUnsubscribed", contactRepository.countByStatus("UNSUBSCRIBED"));
-        
-        // Fetch active template (or create a default one if DB is empty)
-        Template activeTemplate = templateRepository.findById(1L).orElseGet(() -> {
-            String defaultHtml = "<h2>Hello {{NAME}},</h2><p>Welcome to the Summit.</p><br><a href='{{UNSUBSCRIBE_LINK}}'>Click here to unsubscribe</a>";
-            return templateRepository.save(new Template(1L, "Horizon Summit Update", defaultHtml));
-        });
-        model.addAttribute("template", activeTemplate);
-
-        // Fetch recent logs
+        model.addAttribute("totalUnsubscribed", globalSuppressionRepository.countByReason("UNSUBSCRIBED"));
+        model.addAttribute("totalBounces", globalSuppressionRepository.countByReason("BOUNCE"));
+        model.addAttribute("campaigns", campaignRepository.findAll());
         model.addAttribute("recentLogs", deliveryLogRepository.findTop10ByOrderByTimestampDesc());
-
         return "dashboard"; 
     }
 
-    // NEW: Save Template Endpoint
+    @GetMapping("/api/campaign/{name}")
+    @ResponseBody
+    public Map<String, Object> getCampaignDetails(@PathVariable String name) {
+        Campaign camp = campaignRepository.findById(name).orElse(new Campaign(name, "", ""));
+        long cleanCount = contactRepository.countByCampaignNameAndStatus(name, "CLEAN");
+        long sentCount = contactRepository.countByCampaignNameAndStatus(name, "SENT");
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("subject", camp.getSubject());
+        response.put("htmlBody", camp.getHtmlBody());
+        response.put("cleanCount", cleanCount);
+        response.put("sentCount", sentCount);
+        return response;
+    }
+
     @PostMapping("/template/save")
-    public ResponseEntity<String> saveTemplate(
-            @RequestParam("subject") String subject, 
-            @RequestParam("htmlBody") String htmlBody) {
+    public ResponseEntity<String> saveTemplate(@RequestParam("campaignName") String campaignName, @RequestParam("subject") String subject, @RequestParam("htmlBody") String htmlBody) {
+        campaignRepository.save(new Campaign(campaignName, subject, htmlBody));
+        return ResponseEntity.ok("Campaign saved!");
+    }
+
+    @Transactional
+    @PostMapping("/api/campaign/delete")
+    public ResponseEntity<String> deleteCampaign(@RequestParam("campaignName") String campaignName) {
+        contactRepository.deleteByCampaignName(campaignName);
+        campaignRepository.deleteById(campaignName);
+        return ResponseEntity.ok("Campaign deleted successfully.");
+    }
+
+    @GetMapping("/api/export")
+    public void exportCsv(@RequestParam("campaignName") String campaignName, @RequestParam("type") String type, HttpServletResponse response) throws Exception {
+        response.setContentType("text/csv");
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + campaignName + "_" + type + ".csv\"");
         
-        Template template = templateRepository.findById(1L).orElse(new Template(1L, "", ""));
-        template.setSubject(subject);
-        template.setHtmlBody(htmlBody);
-        templateRepository.save(template);
-        
-        return ResponseEntity.ok("Template saved successfully!");
+        // Excludes unsubscribers automatically!
+        List<Contact> contacts = type.equals("CLICKED") 
+                ? contactRepository.findByCampaignNameAndClickedUrlIsNotNullAndStatusNot(campaignName, "UNSUBSCRIBED")
+                : contactRepository.findByCampaignNameAndClickedUrlIsNullAndStatusNot(campaignName, "UNSUBSCRIBED");
+
+        PrintWriter writer = response.getWriter();
+        writer.println("Name,Email,Clicked_URL");
+        for (Contact c : contacts) {
+            writer.println(c.getName() + "," + c.getEmail() + "," + (c.getClickedUrl() != null ? c.getClickedUrl() : "None"));
+        }
     }
 }

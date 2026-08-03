@@ -18,10 +18,8 @@ public class MailerApplication {
     public CommandLineRunner runSetup(ContactRepository contactRepository) {
         return args -> {
             System.out.println("===========================================");
-            System.out.println("💾 INJECTING TEST CONTACT...");
-            
-            // CRITICAL: Replace this with the personal email you verified in AWS SES!
-            contactRepository.save(new Contact("jaruratcare@gmail.com", "Dr. Kishan Test", "CLEAN"));
+            // System.out.println("💾 INJECTING TEST CONTACT...");
+            // contactRepository.save(new Contact("jaruratcare@gmail.com", "Dr. Kishan Test", "CLEAN"));
             
             System.out.println("✅ Database ready. Waiting for web API trigger...");
             System.out.println("===========================================");

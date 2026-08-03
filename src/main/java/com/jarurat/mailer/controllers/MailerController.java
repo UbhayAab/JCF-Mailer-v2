@@ -1,9 +1,11 @@
 package com.jarurat.mailer.controllers;
 
 import com.jarurat.mailer.services.MailerService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/mailer")
@@ -11,62 +13,49 @@ public class MailerController {
 
     private final MailerService mailerService;
 
-    public MailerController(MailerService mailerService) {
-        this.mailerService = mailerService;
+    public MailerController(MailerService mailerService) { this.mailerService = mailerService; }
+
+    @GetMapping("/click")
+    public void handleLinkClick(@RequestParam("token") String token, @RequestParam("url") String url, HttpServletResponse response) throws IOException {
+        String targetUrl = mailerService.trackClickAndGetUrl(token, url);
+        response.sendRedirect(targetUrl);
     }
 
-    // NEW: Endpoint to receive the CSV file
+    // NEW: The universal "Thanks for Registering" page
+    @GetMapping("/success")
+    public ResponseEntity<String> registrationSuccess() {
+        String html = "<html><body style='text-align:center; padding:50px; font-family:Arial, sans-serif; background-color:#f8f9fa;'>" +
+                      "<h2 style='color:#2c3e50;'>Thanks for Registering!</h2>" +
+                      "<p style='color:#7f8c8d; font-size:18px;'>We will contact you for further updates.</p>" +
+                      "</body></html>";
+        return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
+    }
+
     @PostMapping("/contacts/upload")
-    public ResponseEntity<String> uploadContacts(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body("Please upload a valid CSV file.");
-        }
-        
+    public ResponseEntity<String> uploadContacts(@RequestParam("file") MultipartFile file, @RequestParam("campaignName") String campaignName) {
         try {
-            System.out.println("📂 Receiving CSV file: " + file.getOriginalFilename());
-            mailerService.uploadContactsFromCsv(file);
-            return ResponseEntity.ok("CSV Uploaded and Contacts Saved Successfully!");
+            mailerService.uploadContactsFromCsv(file, campaignName);
+            return ResponseEntity.ok("CSV Uploaded successfully to " + campaignName);
         } catch (Exception e) {
-            System.err.println("❌ CSV Upload Failed: " + e.getMessage());
-            return ResponseEntity.internalServerError().body("Failed to upload: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Failed: " + e.getMessage());
         }
     }
 
-    @GetMapping("/trigger-campaign")
-    public ResponseEntity<String> triggerCampaign() {
-        System.out.println("🌐 Web request received! Triggering campaign...");
-        mailerService.runCampaignSimulation();
-        return ResponseEntity.ok("Campaign triggered successfully! Check your terminal.");
-    }
-
-    @PostMapping("/sns-webhook")
-    public ResponseEntity<String> handleSnsWebhook(
-            @RequestHeader(value = "x-amz-sns-message-type", required = false) String messageType,
-            @RequestBody String payload) {
-
-        System.out.println("🚨 AWS SNS WEBHOOK HIT!");
-        
-        if ("SubscriptionConfirmation".equals(messageType)) {
-            System.out.println("AWS Subscription Confirmation Payload:");
-            System.out.println(payload);
-        } 
-        else if ("Notification".equals(messageType)) {
-            mailerService.processSnsNotification(payload);
-        }
-
-        return ResponseEntity.ok("Webhook processed");
+    @PostMapping("/trigger-campaign")
+    public ResponseEntity<String> triggerCampaign(@RequestParam("campaignName") String campaignName) {
+        mailerService.runCampaign(campaignName);
+        return ResponseEntity.ok("Campaign " + campaignName + " triggered!");
     }
 
     @GetMapping("/unsubscribe")
     public ResponseEntity<String> unsubscribe(@RequestParam("token") String token) {
-        System.out.println("🛑 Unsubscribe link clicked for token: " + token);
-        
         mailerService.unsubscribeContact(token);
-        
-        String htmlResponse = "<html><body><h3>You have been successfully unsubscribed.</h3><p>You will no longer receive emails from Jarurat Care Foundation.</p></body></html>";
-        
-        return ResponseEntity.ok()
-                .header("Content-Type", "text/html")
-                .body(htmlResponse);
+        return ResponseEntity.ok().header("Content-Type", "text/html").body("<h3 style='text-align:center; margin-top:50px; font-family:sans-serif;'>Successfully unsubscribed.</h3>");
+    }
+
+    @PostMapping("/sns-webhook")
+    public ResponseEntity<String> handleSnsWebhook(@RequestHeader(value = "x-amz-sns-message-type", required = false) String type, @RequestBody String payload) {
+        if ("Notification".equals(type)) mailerService.processSnsNotification(payload);
+        return ResponseEntity.ok("Webhook processed");
     }
 }

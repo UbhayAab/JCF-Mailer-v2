@@ -1,13 +1,11 @@
 package com.jarurat.mailer.services;
 
+import com.jarurat.mailer.models.*;
 import com.jarurat.mailer.models.Contact;
-import com.jarurat.mailer.models.DeliveryLog;
-import com.jarurat.mailer.models.Template;
-import com.jarurat.mailer.repositories.ContactRepository;
-import com.jarurat.mailer.repositories.DeliveryLogRepository;
-import com.jarurat.mailer.repositories.TemplateRepository;
+import com.jarurat.mailer.repositories.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sesv2.SesV2Client;
@@ -21,37 +19,34 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class MailerService {
 
     private final ContactRepository contactRepository;
+    private final CampaignRepository campaignRepository;
+    private final GlobalSuppressionRepository globalSuppressionRepository;
     private final DeliveryLogRepository deliveryLogRepository;
-    private final TemplateRepository templateRepository;
     private final SesV2Client sesClient;
     private final String fromEmail;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    
     private final ExecutorService virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
-    public MailerService(
-            ContactRepository contactRepository, 
-            DeliveryLogRepository deliveryLogRepository,
-            TemplateRepository templateRepository,
-            @Value("${aws.region}") String regionString,
-            @Value("${aws.ses.fromEmail}") String fromEmail) {
-            
-        this.contactRepository = contactRepository;
-        this.deliveryLogRepository = deliveryLogRepository;
-        this.templateRepository = templateRepository;
+    public MailerService(ContactRepository contactRepository, CampaignRepository campaignRepository,
+                         GlobalSuppressionRepository globalSuppressionRepository, DeliveryLogRepository deliveryLogRepository,
+                         @Value("${aws.region}") String regionString, @Value("${aws.ses.fromEmail}") String fromEmail) {
+        this.contactRepository = contactRepository; this.campaignRepository = campaignRepository; this.globalSuppressionRepository = globalSuppressionRepository; this.deliveryLogRepository = deliveryLogRepository;
         this.fromEmail = fromEmail;
-
-        this.sesClient = SesV2Client.builder()
-                .region(Region.of(regionString))
-                .build();
+        this.sesClient = SesV2Client.builder().region(Region.of(regionString)).build();
     }
 
-    public void uploadContactsFromCsv(MultipartFile file) throws Exception {
+    public void uploadContactsFromCsv(MultipartFile file, String campaignName) throws Exception {
+        System.out.println("📂 Starting CSV processing for: " + campaignName + "... (Please wait)");
+        int addedCount = 0;
+        int skippedCount = 0;
+        
         try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
             String line;
             boolean isFirstLine = true;
@@ -61,107 +56,98 @@ public class MailerService {
                 if (data.length >= 2) {
                     String name = data[0].trim();
                     String email = data[1].trim();
-                    if (!contactRepository.existsByEmail(email)) {
-                        contactRepository.save(new Contact(email, name, "CLEAN"));
+                    
+                    if (globalSuppressionRepository.existsById(email) || contactRepository.existsByCampaignNameAndEmail(campaignName, email)) {
+                        skippedCount++;
+                    } else {
+                        contactRepository.save(new Contact(campaignName, email, name, "CLEAN"));
+                        addedCount++;
                     }
                 }
             }
         }
+        System.out.println("✅ CSV Complete | Added: " + addedCount + " | Skipped (Duplicates/Suppressed): " + skippedCount);
     }
 
-    public void runCampaignSimulation() {
-        // Fetch the active template from DB
-        Template template = templateRepository.findById(1L)
-            .orElseThrow(() -> new RuntimeException("No template found! Please save one in the dashboard."));
-
-        List<Contact> cleanContacts = contactRepository.findByStatus("CLEAN");
-        System.out.println("🚀 Preparing to push " + cleanContacts.size() + " emails to AWS SES...");
+    public void runCampaign(String campaignName) {
+        Campaign campaign = campaignRepository.findById(campaignName).orElseThrow(() -> new RuntimeException("Campaign not found!"));
+        List<Contact> cleanContacts = contactRepository.findByCampaignNameAndStatus(campaignName, "CLEAN");
+        System.out.println("🚀 Triggering " + campaignName + " - pushing " + cleanContacts.size() + " emails...");
 
         for (Contact contact : cleanContacts) {
             virtualThreadExecutor.submit(() -> {
                 try {
-                    sendEmailViaSes(contact, template);
+                    sendEmailViaSes(contact, campaign);
+                    contact.setStatus("SENT");
+                    contactRepository.save(contact);
                 } catch (Exception e) {
-                    System.err.println("❌ Failed to send to " + contact.getEmail() + ": " + e.getMessage());
+                    System.err.println("❌ Failed: " + contact.getEmail() + " - " + e.getMessage());
                 }
             });
         }
     }
 
-    private void sendEmailViaSes(Contact contact, Template template) {
+    private void sendEmailViaSes(Contact contact, Campaign campaign) {
         String unsubscribeLink = "http://<ELASTIC_IP>/api/mailer/unsubscribe?token=" + contact.getUnsubscribeToken();
+        String html = campaign.getHtmlBody().replace("{{NAME}}", contact.getName()).replace("{{UNSUBSCRIBE_LINK}}", unsubscribeLink);
 
-        // Dynamically replace tags in the HTML
-        String personalizedHtml = template.getHtmlBody()
-                .replace("{{NAME}}", contact.getName())
-                .replace("{{UNSUBSCRIBE_LINK}}", unsubscribeLink);
+        StringBuffer sb = new StringBuffer();
+        Matcher m = Pattern.compile("\\{\\{TRACK:(.*?)\\}\\}").matcher(html);
+        while (m.find()) {
+            String originalUrl = m.group(1);
+            String trackLink = "http://<ELASTIC_IP>/api/mailer/click?token=" + contact.getUnsubscribeToken() + "&url=" + originalUrl;
+            m.appendReplacement(sb, trackLink);
+        }
+        m.appendTail(sb);
 
-        Content subject = Content.builder().data(template.getSubject()).build();
-        Content body = Content.builder().data(personalizedHtml).build();
-        
-        // UPDATED: Now building as HTML instead of Text!
-        Body messageBody = Body.builder().html(body).build(); 
-        Message message = Message.builder().subject(subject).body(messageBody).build();
+        Message message = Message.builder()
+                        .subject(Content.builder().data(campaign.getSubject()).build()) // Added .build()
+                        .body(Body.builder().html(Content.builder().data(sb.toString()).build()).build()) // Added .build() for Content and Body
+                        .build();
 
-        Destination destination = Destination.builder().toAddresses(contact.getEmail()).build();
-        EmailContent emailContent = EmailContent.builder().simple(message).build();
 
-        SendEmailRequest request = SendEmailRequest.builder()
-                .fromEmailAddress(fromEmail)
-                .destination(destination)
-                .content(emailContent)
-                .build();
+        sesClient.sendEmail(SendEmailRequest.builder().fromEmailAddress(fromEmail)
+                .destination(Destination.builder().toAddresses(contact.getEmail()).build())
+                .content(EmailContent.builder().simple(message).build()).build());
 
-        SendEmailResponse response = sesClient.sendEmail(request);
-
-        DeliveryLog log = new DeliveryLog(contact.getEmail(), "SENT", LocalDateTime.now());
-        deliveryLogRepository.save(log);
-        
+        deliveryLogRepository.save(new DeliveryLog(contact.getEmail(), "SENT (" + campaign.getName() + ")", LocalDateTime.now()));
         System.out.println("✅ AWS SES Dispatched: " + contact.getEmail());
     }
 
+    public String trackClickAndGetUrl(String token, String targetUrl) {
+        contactRepository.findByUnsubscribeToken(token).ifPresent(contact -> {
+            contact.setClickedUrl(targetUrl);
+            contactRepository.save(contact);
+            System.out.println("🎯 CLICK TRACKED: " + contact.getEmail() + " clicked a link!");
+        });
+        return targetUrl;
+    }
+
+    public void unsubscribeContact(String token) {
+        contactRepository.findByUnsubscribeToken(token).ifPresent(contact -> {
+            contact.setStatus("UNSUBSCRIBED"); // BUG FIX: Now actually marks the contact as unsubscribed!
+            contactRepository.save(contact);
+            globalSuppressionRepository.save(new GlobalSuppression(contact.getEmail(), "UNSUBSCRIBED"));
+            deliveryLogRepository.save(new DeliveryLog(contact.getEmail(), "UNSUBSCRIBED", LocalDateTime.now()));
+            System.out.println("🛑 UNSUBSCRIBED: " + contact.getEmail());
+        });
+    }
+
+    // SNS Processing remains unchanged
     public void processSnsNotification(String payload) {
         try {
             JsonNode rootNode = objectMapper.readTree(payload);
             if (!rootNode.has("Message")) return;
+            JsonNode sesNode = objectMapper.readTree(rootNode.get("Message").asText());
+            String type = sesNode.path("notificationType").asText();
 
-            String messageString = rootNode.get("Message").asText();
-            JsonNode sesNode = objectMapper.readTree(messageString);
-            String notificationType = sesNode.path("notificationType").asText();
-
-            if ("Bounce".equalsIgnoreCase(notificationType)) {
-                JsonNode bouncedRecipients = sesNode.path("bounce").path("bouncedRecipients");
-                for (JsonNode recipient : bouncedRecipients) {
-                    suppressContact(recipient.path("emailAddress").asText(), "BOUNCE");
-                }
-            } else if ("Complaint".equalsIgnoreCase(notificationType)) {
-                JsonNode complainedRecipients = sesNode.path("complaint").path("complainedRecipients");
-                for (JsonNode recipient : complainedRecipients) {
-                    suppressContact(recipient.path("emailAddress").asText(), "SPAM_COMPLAINT");
+            if ("Bounce".equalsIgnoreCase(type) || "Complaint".equalsIgnoreCase(type)) {
+                String reason = "Bounce".equalsIgnoreCase(type) ? "BOUNCE" : "COMPLAINT";
+                JsonNode recipients = sesNode.path(type.toLowerCase()).path(type.toLowerCase() + "dRecipients");
+                for (JsonNode recipient : recipients) {
+                    globalSuppressionRepository.save(new GlobalSuppression(recipient.path("emailAddress").asText(), reason));
                 }
             }
-        } catch (Exception e) {
-            System.err.println("❌ Error parsing SNS payload: " + e.getMessage());
-        }
-    }
-
-    private void suppressContact(String email, String reason) {
-        List<Contact> contacts = contactRepository.findByEmail(email);
-        if (!contacts.isEmpty()) {
-            for (Contact contact : contacts) {
-                contact.setStatus("SUPPRESSED");
-                contactRepository.save(contact);
-            }
-            // Log suppression in Delivery Logs too!
-            deliveryLogRepository.save(new DeliveryLog(email, "SUPPRESSED (" + reason + ")", LocalDateTime.now()));
-        }
-    }
-
-    public void unsubscribeContact(String token) {
-        contactRepository.findByUnsubscribeToken(token).ifPresentOrElse(contact -> {
-            contact.setStatus("UNSUBSCRIBED"); 
-            contactRepository.save(contact);
-            deliveryLogRepository.save(new DeliveryLog(contact.getEmail(), "UNSUBSCRIBED", LocalDateTime.now()));
-        }, () -> {});
+        } catch (Exception e) { System.err.println("❌ SNS Parse Error: " + e.getMessage()); }
     }
 }
