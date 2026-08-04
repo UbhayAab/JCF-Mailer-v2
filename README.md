@@ -1,120 +1,288 @@
-# Jarurat Care Foundation - Mailer Engine
+# JCF Mailer Core
 
-This repository contains the cloud-native Java Spring Boot application used to manage and dispatch high-volume email campaigns for the Horizon Oncology Summit.
-
----
-
-## 1. About Mailer Engine
-
-This mailer engine is designed to send bulk, automated emails to doctors and participants while strictly adhering to CAN-SPAM compliance and AWS sending reputation guidelines.
-
-Built on **Java 21**, the application leverages **Virtual Threads** (`newVirtualThreadPerTaskExecutor`) to achieve high-throughput concurrency, allowing thousands of emails to be processed simultaneously with a minimal memory footprint.
-
-### Key Features
-
-- **Passwordless Cloud Authentication:** Uses AWS IAM roles to securely interact with AWS services without hardcoded access keys.
-- **Automated Reputation Management:** Listens for AWS SNS webhooks to automatically suppress bounced or complained email addresses.
-- **CAN-SPAM Compliance:** Dynamically generates unique One-Click Unsubscribe links for every recipient.
+**JCF Mailer Core** is an enterprise-grade, campaign-centric email marketing engine built exclusively for the Jarurat Care Foundation (JCF). It replaces generic third-party tools by providing a secure, scalable, and isolated environment for managing automated email campaigns, tracking engagement, and ensuring high deliverability using Amazon SES.
 
 ---
 
-## 2. How to Run & Test
+# Features
 
-To access and run the server, you need the private SSH key (`<ssh-key>.pem`). Request this file from the lead developer and save it to a secure location on your local machine (e.g., your `Downloads` folder).
+- **Multi-Campaign Engine**
+  - Complete campaign isolation.
+  - Mailing lists, templates, and analytics remain separated.
+  - Zero cross-campaign recipient overlap.
 
-### Step 0: Start the EC2 instance
-Ask Developer to do it, he will do immediately or in case you have access to AWS credentials, Go to AWS Management Console -> EC2 -> instances -> select the instance `jarurat-mailer-server` -> Instance State -> Start Instance
+- **Dynamic Link Tracking**
+  - Automatically wraps outbound links.
+  - Tracks user engagement using HTTP 302 redirects.
+  - Updates click activity in real time.
 
-### Step 1: Connect to the EC2 Server
+- **Global Suppression List**
+  - Maintains a centralized suppression database.
+  - Automatically blocks:
+    - Bounced emails
+    - Spam complaints
+    - Unsubscribed recipients
+  - Applies across all campaigns.
 
-Open your terminal (PowerShell/Command Prompt) and run:
+- **AWS SES & SNS Integration**
+  - Amazon SES for email delivery.
+  - Amazon SNS webhook support for bounce and complaint processing.
 
-```bash
-cd path/to/your/folder/with/key
-ssh -i "<ssh-key>.pem" ubuntu@<ELASTIC_IP>
-```
+- **Analytics & Export**
+  - Export users who clicked tracked links.
+  - Export users who did not take action.
+  - CSV download support.
 
-### Step 2: Start the Engine
+- **Admin Authentication**
+  - Protected administrative dashboard.
+  - Restricted access for campaign management.
 
-Once inside the Ubuntu server, ensure no ghost processes are blocking the port, then launch the application:
+---
 
-```bash
-sudo pkill -f java
-sudo java -jar mailer-0.0.1-SNAPSHOT.jar
-```
+# Tech Stack
 
-> **Note:** To safely shut down the server, always use **Ctrl + C** in the terminal to trigger a graceful Spring Boot shutdown.
+**Backend**
+- Java 17+
+- Spring Boot 3
 
-### Step 3: Trigger a Campaign
+**Database**
+- PostgreSQL 15+
 
-With the server running, open any web browser and hit the trigger endpoint:
+**Cloud**
+- Amazon EC2
+- Amazon SES
+- Amazon SNS
+
+**Frontend**
+- Thymeleaf
+- Bootstrap 5
+- Custom CSS
+
+**Security**
+- Nginx Reverse Proxy
+- Let's Encrypt SSL
+
+---
+
+# Prerequisites
+
+Before running the application, ensure the following are configured:
+
+## PostgreSQL
+
+- Running PostgreSQL instance
+- Database named:
 
 ```text
-http://<ELASTIC_IP>/api/mailer/trigger-campaign
+jarurat_mailer
 ```
 
-You should receive a success response in the browser, and the terminal will log the SES dispatch events.
+## AWS
+
+- Amazon SES configured and production-ready (out of Sandbox)
+- IAM User or IAM Role with SES sending permissions
+- Amazon SNS webhook configured to:
+
+```text
+https://mailer.horizonevent.info/api/mailer/sns-webhook
+```
+
+## Domain
+
+Create an A Record pointing your domain to the EC2 instance.
 
 ---
 
-## 2. AWS Architecture
+# Environment Configuration
 
-This application integrates with multiple AWS services to create a secure, serverless-authenticated pipeline.
+Configure `src/main/resources/application.properties`.
 
-- **EC2 (Elastic Compute Cloud):** An Ubuntu Linux instance hosting the Java application.
-- **EIP (Elastic IP):** The server is bound to a static public IP (`<ELASTIC_IP>`). This ensures the webhook URLs and DNS records never break if the server restarts.
-- **IAM (Identity and Access Management):** The EC2 instance is assigned the `jarurat-ec2-ses-role`. The AWS SDK in the Java code automatically inherits these permissions, completely eliminating the need for `.properties` passwords.
-- **SES (Simple Email Service):** The outbound mailing engine. The domain (`horizonevent.info`) is authenticated via DKIM and SPF records for high deliverability.
-- **SNS (Simple Notification Service):** The `jarurat-email-alerts` topic catches **Bounces** and **Spam Complaints** from SES and forwards them as JSON POST requests to our EC2 webhook (`/api/mailer/sns-webhook`).
+```properties
+# Server
+server.port=8080
+app.domain=https://mailer.horizonevent.info
+
+# Database
+spring.datasource.url=jdbc:postgresql://localhost:5432/jarurat_mailer
+spring.datasource.username=postgres
+spring.datasource.password=YOUR_DB_PASSWORD
+
+spring.jpa.hibernate.ddl-auto=update
+
+# AWS
+aws.region=ap-south-1
+aws.ses.fromEmail=admin@horizonevent.info
+```
+
+**Note**
+
+Do not hardcode AWS Access Keys in production. Use EC2 IAM Roles or environment variables instead.
 
 ---
 
-## 3. How to Deploy Code Changes
-
-When you update the Java code on your local machine, follow this pipeline to push the changes to production.
-
-### 1. Compile the Build (Local Machine)
-
-In your project root folder, run:
+# Build the Application
 
 ```bash
-mvnw.cmd clean package
-```
-
-### 2. Upload to the Cloud (Local Machine)
-
-Use Secure Copy Protocol (SCP) to upload the `.jar` file to AWS:
-
-```bash
-scp -i "<ssh-key>.pem" "target/mailer-0.0.1-SNAPSHOT.jar" ubuntu@<ELASTIC_IP>:/home/ubuntu/
-```
-
-### 3. Restart the Server (EC2 Terminal)
-
-Log into EC2 via SSH, kill the old process, and start the new one:
-
-```bash
-sudo pkill -f java
-sudo java -jar mailer-0.0.1-SNAPSHOT.jar
+./mvnw clean package -DskipTests
 ```
 
 ---
 
-## 4. Future Implementations
+# EC2 Deployment
 
-This architecture is currently a functional prototype running on an H2 in-memory database. To transition to a full production release, the following upgrades are needed:
+## 1. Configure Nginx
 
-1. **PostgreSQL Migration:** Replace the volatile H2 database with a persistent PostgreSQL database installed on the EC2 instance to ensure contact lists and suppression states survive server reboots.
-2. **Background Process Manager (`systemd`):** Configure Linux to run the `.jar` as a permanent background service. This ensures the app restarts automatically upon a system crash or reboot, rather than relying on an active SSH session.
-3. **Reverse Proxy & SSL (Nginx):** Install Nginx to route traffic through the domain (e.g., `mailer.horizonevent.info`) instead of the raw Elastic IP. Attach a Let's Encrypt SSL certificate to upgrade all endpoints from `http://` to `https://`.
-4. **Security Hashing for Unsubscribes:** Upgrade the plain-text unsubscribe links (`?email=test@test.com`) to use cryptographic hashing (`?token=abc123xyz`) to prevent malicious bots from guessing emails and manipulating the database.
-5. **Custom Inbound Routing (Zoho Alternative):** Implement AWS SES Inbound Receipt Rules paired with an S3 Bucket and AWS Lambda. This will catch replies sent to `admin@horizonevent.info`, parse the raw MIME data, and route it to an internal dashboard or Slack channel, eliminating the need for third-party inboxes like Zoho or Google Workspace.
+Create:
+
+```text
+/etc/nginx/sites-available/mailer
+```
+
+Add:
+
+```nginx
+server {
+    server_name mailer.horizonevent.info;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+Enable the configuration:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/mailer /etc/nginx/sites-enabled/
+sudo systemctl restart nginx
+```
 
 ---
 
-## 5. Precautions & Warnings
+## 2. Enable SSL
 
-- **DO NOT COMMIT THE `.pem` KEY:** Never commit `<ssh-key>.pem` to this repository or GitHub. If this key is leaked, malicious actors gain root access to the EC2 server.
-- **Graceful Shutdowns:** Never simply close your SSH terminal window while the app is running. This creates an "orphan" process that permanently locks Port 80, requiring a `kill -9` command to fix. Always press **Ctrl + C**.
-- **Sandbox Restrictions:** Until AWS Trust & Safety fully approves the account, SES operates in **Sandbox Mode**. Emails can only be sent to internally verified addresses (e.g., `jaruratcare@gmail.com`).
-- **EC2 Billing:** AWS bills for EC2 instances based on whether the **hardware** is running, not whether the Java application is running. If you need to pause billing, go to the AWS Console and explicitly **Stop** the instance. Start it only when email sending is required.
+```bash
+sudo certbot --nginx -d mailer.horizonevent.info
+```
+
+---
+
+## 3. Start the Application
+
+```bash
+sudo java -jar target/mailer-0.0.1-SNAPSHOT.jar
+```
+
+---
+
+# Usage
+
+## Login
+
+Open:
+
+```text
+https://mailer.horizonevent.info
+```
+
+Click **Send Bulk Emails** and log in using the administrator credentials.
+
+---
+
+## Create a Campaign
+
+1. Enter a unique Campaign ID.
+   Example:
+
+```text
+Summit_Invite_Aug
+```
+
+2. Enter the email subject.
+
+3. Paste your HTML email template.
+
+4. Supported template variables:
+
+| Variable | Description |
+|----------|-------------|
+| `{{NAME}}` | Inserts recipient name |
+| `{{UNSUBSCRIBE_LINK}}` | Inserts unique unsubscribe link |
+| `{{TRACK:https://example.com}}` | Tracks clicks and redirects |
+
+Example:
+
+```text
+{{TRACK:https://mailer.horizonevent.info/api/mailer/success}}
+```
+
+5. Upload a CSV file.
+
+Required CSV format:
+
+```csv
+Name,Email
+John Doe,john@example.com
+Jane Doe,jane@example.com
+```
+
+6. Click **Save & Upload CSV**.
+
+---
+
+## Launch Campaign
+
+- Verify audience count.
+- Click **Trigger Campaign**.
+- Monitor logs on the EC2 server for delivery status.
+
+---
+
+## Analytics
+
+Available exports:
+
+- Export Action Takers
+- Export No Action
+
+Recipients with bounces, complaints, or unsubscribes are automatically excluded.
+
+---
+
+# Security Notes
+
+- Nginx handles ports **80** and **443**.
+- Spring Boot runs internally on **8080**.
+- Deleting a campaign removes only campaign-specific data.
+- The Global Suppression List is always preserved.
+- Dynamic tracking URLs use URL encoding to prevent malformed redirects.
+
+---
+
+# Project Architecture
+
+```
+Internet
+    │
+    ▼
+Nginx (80 / 443)
+    │
+    ▼
+Spring Boot (8080)
+    │
+    ├── PostgreSQL
+    │
+    ├── Amazon SES
+    │
+    └── Amazon SNS
+```
+
+---
+
+# License
+
+This project is developed exclusively for **Jarurat Care Foundation (JCF)**.
+
+All rights reserved.
