@@ -132,16 +132,45 @@ function bytes(n) {
 
 /* ---------- folders ---------- */
 
+/**
+ * A failure and an empty folder used to render as the same grey circle, so
+ * "the mail server is down" was indistinguishable from "there is no mail".
+ * These two builders keep the difference visible: a failure says so in words
+ * and in colour and offers the one action that helps.
+ */
+function errState(message, retry) {
+  return '<div class="errstate" role="alert">'
+    + '<span class="big" aria-hidden="true">&#9888;</span>'
+    + '<span class="head">Could not load this</span>'
+    + '<span class="why">' + esc(message || 'The mail server did not answer.') + '</span>'
+    + (retry ? '<button class="btn sm" type="button" data-retry="' + esc(retry) + '">Try again</button>' : '')
+    + '</div>';
+}
+
+function loadState(label) {
+  return '<div class="loadstate"><span class="spin" aria-hidden="true"></span>'
+    + '<span>' + esc(label || 'Loading') + '</span></div>';
+}
+
+/* One delegated handler, because the blocks above are written into three
+   different panes and each is replaced whenever the pane reloads. */
+document.addEventListener('click', function (e) {
+  const b = e.target.closest && e.target.closest('[data-retry]');
+  if (!b) return;
+  const what = b.getAttribute('data-retry');
+  if (what === 'folders') loadFolders();
+  else if (what === 'messages') loadMessages(true);
+});
+
 async function loadFolders() {
   let data;
   try {
     data = await api('/api/mail/folders');
   } catch (e) {
     if (handled(e)) return;
-    $('folders').innerHTML = '<div class="empty" style="height:auto"><span class="big">○</span>'
-      + esc(e.message) + '</div>';
+    $('folders').innerHTML = errState(e.message, 'folders');
     $('list').innerHTML = '';
-    $('reader').innerHTML = '<div class="empty"><span class="big">✉</span>Mailbox unavailable</div>';
+    $('reader').innerHTML = errState('The mailbox could not be opened.', 'folders');
     return;
   }
 
@@ -203,8 +232,7 @@ async function loadMessages(reset) {
           + '&offset=' + S.offset + '&limit=' + S.limit);
   } catch (e) {
     if (handled(e)) return;
-    $('list').innerHTML = '<div class="empty" style="height:auto"><span class="big">○</span>'
-      + esc(e.message) + '</div>';
+    $('list').innerHTML = errState(e.message, 'messages');
     return;
   }
   S.messages = S.messages.concat(data.messages || []);
@@ -213,7 +241,7 @@ async function loadMessages(reset) {
 }
 
 function loadingRow() {
-  return '<div class="empty" style="height:auto"><span class="big">○</span>Loading...</div>';
+  return loadState('Loading messages');
 }
 
 function renderList() {
@@ -249,7 +277,7 @@ function renderList() {
 async function openMessage(id, withImages) {
   S.selected = id;
   renderList();
-  $('reader').innerHTML = '<div class="empty"><span class="big">○</span>Opening...</div>';
+  $('reader').innerHTML = loadState('Opening');
 
   let m;
   try {
@@ -257,7 +285,7 @@ async function openMessage(id, withImages) {
       + '&images=' + (withImages ? 'true' : 'false') + '&theme=' + encodeURIComponent(theme()));
   } catch (e) {
     if (handled(e)) return;
-    $('reader').innerHTML = '<div class="empty"><span class="big">○</span>' + esc(e.message) + '</div>';
+    $('reader').innerHTML = errState(e.message, null);
     return;
   }
   S.imagesFor = withImages ? id : null;
@@ -293,7 +321,7 @@ function renderReader(m) {
   head.innerHTML =
     '<h2>' + esc(m.subject || '(no subject)') + '</h2>'
     + '<div class="rmeta">'
-    + '<div class="avatar" style="background:var(--c1)">' + esc(initial) + '</div>'
+    + '<div class="avatar">' + esc(initial) + '</div>'
     + '<div class="who"><b>' + esc(m.from.display || m.from.email) + '</b>'
     + '<div class="muted" style="font-size:12.5px">' + esc(m.from.email)
     + (recipients ? ' to ' + recipients : '') + ' · ' + esc(fullWhen(m.receivedAt)) + '</div></div>'
@@ -568,7 +596,7 @@ if (!can('MAIL_SEND')) {
   try {
     state = await api('/api/mail/status');
   } catch (e) {
-    $('reader').innerHTML = '<div class="empty"><span class="big">○</span>' + esc(e.message) + '</div>';
+    $('reader').innerHTML = errState(e.message, null);
     return;
   }
   if (state.unlocked) {
