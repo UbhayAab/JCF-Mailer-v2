@@ -31,3 +31,22 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Secrets - never commit these ###
+.env
+.env.*
+!.env.example
+*.creds
+migrate-zoho.creds
+*.pem
+*.key
+*.p12
+*.jks
+id_rsa*
+/etc-jcfmailer.env
+
+### Build artifacts ###
+*.jar
+*.war
+*.log
+*.sql.gz
