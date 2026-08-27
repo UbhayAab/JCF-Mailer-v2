@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JCF Campaign Studio</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="icon" href="/logo.png">
+</head>
+<body>
+<div class="aurora-bg"></div>
+
+<div class="app">
+    <!-- ============================ SIDEBAR ============================ -->
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-mark">JC</div>
+            <div class="brand-text">Campaign Studio<small>Jarurat Care Foundation</small></div>
+        </div>
+
+        <div class="nav-item active" data-view="overview">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 13h6V3H3zM15 21h6V11h-6zM3 21h6v-4H3zM15 7h6V3h-6z"/></svg>
+            <span class="label">Overview</span>
+        </div>
+
+        <!-- Webmail is a separate page, so these two are real links rather than
+             data-view switches. The click handler in console.js skips anchors. -->
+        <div class="nav-group" data-group="mailbox">Mailbox</div>
+        <a class="nav-item" href="/mail" data-perm="MAIL_READ">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 4h16v16H4z"/><path d="M4 8h16M9 12h7M9 16h7"/></svg>
+            <span class="label">Inbox</span>
+        </a>
+        <a class="nav-item" href="/mail#compose" data-perm="MAIL_SEND">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            <span class="label">Compose</span>
+        </a>
+        <div class="nav-item" data-view="mailboxes" data-perm="MAILBOX_MANAGE">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18v9H3z"/><path d="M3 11 6 5h12l3 6"/><path d="M9 11v3h6v-3"/></svg>
+            <span class="label">Mailboxes</span><span class="nav-badge" id="badgeMailboxes">0</span>
+        </div>
+        <div class="nav-item" data-view="domains" data-perm="MAILBOX_MANAGE">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg>
+            <span class="label">Domains</span>
+        </div>
+
+        <div class="nav-group" data-group="marketing">Marketing</div>
+        <div class="nav-item" data-view="campaigns" data-perm="CAMPAIGNS_READ">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 5h18v14H3z"/><path d="m3 6 9 7 9-7"/></svg>
+            <span class="label">Campaigns</span><span class="nav-badge" id="badgeCampaigns">0</span>
+        </div>
+        <div class="nav-item" data-view="composer" data-perm="CAMPAIGNS_WRITE">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            <span class="label">Composer</span>
+        </div>
+        <div class="nav-item" data-view="journeys" data-perm="CAMPAIGNS_READ">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2.4"/><circle cx="18" cy="12" r="2.4"/><circle cx="6" cy="19" r="2.4"/><path d="M8.4 5H13a3 3 0 0 1 3 3v1.6M15.6 12H11a3 3 0 0 0-3 3v2"/></svg>
+            <span class="label">Journeys</span><span class="nav-badge" id="badgeJourneys">0</span>
+        </div>
+
+        <div class="nav-group" data-group="audience">Audience</div>
+        <div class="nav-item" data-view="lists" data-perm="LISTS_READ">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+            <span class="label">Lists</span><span class="nav-badge" id="badgeLists">0</span>
+        </div>
+        <div class="nav-item" data-view="subscribers" data-perm="SUBSCRIBERS_READ">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+            <span class="label">Subscribers</span>
+        </div>
+        <div class="nav-item" data-view="suppression" data-perm="SUPPRESSION_READ">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>
+            <span class="label">Suppression</span><span class="nav-badge" id="badgeSuppression">0</span>
+        </div>
+        <div class="nav-item" data-view="verify" data-perm="VERIFICATION_RUN">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M12 3l7 3v6c0 4.4-3 8.2-7 9-4-.8-7-4.6-7-9V6z"/></svg>
+            <span class="label">Verify list</span>
+        </div>
+
+        <div class="nav-group" data-group="ops">Operations</div>
+        <div class="nav-item" data-view="analytics" data-perm="ANALYTICS_READ">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-4 3 3 5-7"/></svg>
+            <span class="label">Analytics</span>
+        </div>
+        <div class="nav-item" data-view="messagelog" data-perm="MESSAGELOG_READ">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>
+            <span class="label">Message log</span>
+        </div>
+        <div class="nav-item" data-view="templates" data-perm="TEMPLATES_READ">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 4h16v6H4zM4 14h7v6H4zM15 14h5v6h-5z"/></svg>
+            <span class="label">Templates</span>
+        </div>
+        <div class="nav-item" data-view="transactional" data-perm="TRANSACTIONAL_READ">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-8-8 18-2-7-8-3Z"/></svg>
+            <span class="label">Transactional</span>
+        </div>
+
+        <div class="nav-group" data-group="admin">Administration</div>
+        <div class="nav-item" data-view="team" data-perm="TEAM_READ">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span class="label">Team &amp; roles</span>
+        </div>
+        <div class="nav-item" data-view="apikeys" data-perm="APIKEYS_MANAGE">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 8.8-8.8M17 6l2.5 2.5M14 9l2.5 2.5"/></svg>
+            <span class="label">API keys</span>
+        </div>
+        <div class="nav-item" data-view="audit" data-perm="AUDIT_READ">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6M9 11h3"/></svg>
+            <span class="label">Audit log</span>
+        </div>
+
+        <div class="sidebar-foot">
+            <div class="panel" style="padding:10px 12px;margin-bottom:9px">
+                <div style="display:flex;align-items:center;gap:8px">
+                    <span class="status-dot" id="sesDot"></span>
+                    <span style="font-size:11.5px;font-weight:650">Amazon SES</span>
+                </div>
+                <div style="font-size:10.5px;color:var(--text-mute);margin-top:4px" id="sesFoot">checking</div>
+            </div>
+            <div class="user-chip">
+                <div class="avatar" id="avatar">?</div>
+                <div class="who">
+                    <b th:text="${userName}">User</b>
+                    <span th:text="${userRoleLabel}">Role</span>
+                </div>
+            </div>
+            <form th:action="@{/logout}" method="post" style="margin:0">
+                <button type="submit" class="btn btn-sm" style="width:100%">Sign out</button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- ============================== MAIN ============================== -->
+    <main class="main">
+
+        <!-- ------------------------- OVERVIEW ------------------------- -->
+        <section class="view active" id="view-overview">
+            <div class="topbar">
+                <div><h1>Overview</h1><p class="sub">Delivery, engagement and account health at a glance.</p></div>
+                <div class="topbar-actions"><button class="btn" onclick="loadOverview()">Refresh</button></div>
+            </div>
+            <div class="grid grid-kpi" id="kpis" style="margin-bottom:18px"></div>
+
+            <div class="grid grid-2" style="margin-bottom:18px">
+                <div class="panel">
+                    <div class="panel-head"><h3>Sending, last 14 days</h3>
+                        <span class="panel-note" id="ovSeriesRange"></span></div>
+                    <div class="panel-body"><div id="ovSeriesChart" class="chart-host"></div></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-head"><h3>What happened to the mail</h3></div>
+                    <div class="panel-body"><div id="ovEngagement" class="chart-host"></div></div>
+                </div>
+            </div>
+            <div class="grid grid-2">
+                <div class="panel">
+                    <div class="panel-head"><h3>Recent activity</h3></div>
+                    <div class="panel-body tight"><div class="table-wrap">
+                        <table class="data">
+                            <thead><tr><th>Who</th><th>Action</th><th>Target</th><th>When</th></tr></thead>
+                            <tbody id="activityBody"></tbody>
+                        </table>
+                    </div></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+                    <div class="panel">
+                        <div class="panel-head"><h3>Sending account</h3></div>
+                        <div class="panel-body" id="sesPanel"></div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-head"><h3>Deliverability</h3></div>
+                        <div class="panel-body" id="identityPanel"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ------------------------ CAMPAIGNS ------------------------- -->
+        <section class="view" id="view-campaigns">
+            <div class="topbar">
+                <div><h1>Campaigns</h1><p class="sub">Every send, with its live engagement numbers.</p></div>
+                <div class="topbar-actions">
+                    <button class="btn" onclick="loadCampaigns()">Refresh</button>
+                    <button class="btn btn-primary" data-perm="CAMPAIGNS_WRITE" onclick="openCampaignKind()">New campaign</button>
+                </div>
+            </div>
+            <div class="panel"><div class="panel-body tight"><div class="table-wrap">
+                <table class="data">
+                    <thead><tr>
+                        <th>Campaign</th><th>Audience</th><th>Status</th>
+                        <th class="num">Recipients</th><th class="num">Sent</th>
+                        <th class="num">Opens</th><th class="num">Clicks</th><th class="num">Failed</th><th></th>
+                    </tr></thead>
+                    <tbody id="campaignBody"></tbody>
+                </table>
+            </div></div></div>
+        </section>
+
+        <!-- ------------------------- JOURNEYS ------------------------- -->
+        <section class="view" id="view-journeys">
+            <div class="topbar">
+                <div><h1>Multi email journeys</h1>
+                    <p class="sub">A flowchart of base sheets, emails, A/B splits, conditions and loops.
+                        Everything here is scheduled; a journey never sends on a button press.</p></div>
+                <div class="topbar-actions">
+                    <button class="btn" onclick="loadJourneys()">Refresh</button>
+                    <button class="btn btn-primary" data-perm="CAMPAIGNS_WRITE" onclick="openModal('modalJourney')">New journey</button>
+                </div>
+            </div>
+            <div class="panel"><div class="panel-body tight"><div class="table-wrap">
+                <table class="data">
+                    <thead><tr>
+                        <th>Journey</th><th>Status</th><th class="num">Steps</th>
+                        <th class="num">People</th><th class="num">In flight</th><th>Created</th><th></th>
+                    </tr></thead>
+                    <tbody id="journeyBody"></tbody>
+                </table>
+            </div></div></div>
+        </section>
+
+        <!-- ---------------------- JOURNEY EDITOR ---------------------- -->
+        <section class="view" id="view-journey">
+            <div class="topbar">
+                <div><h1 id="jrnTitle">Journey</h1><p class="sub" id="jrnSub"></p></div>
+                <div class="topbar-actions">
+                    <span class="pill pill-draft plain" id="jrnStatus">DRAFT</span>
+                    <button class="btn btn-sm" onclick="go('journeys')">All journeys</button>
+                    <button class="btn btn-sm" onclick="openJourneySettings()">Settings</button>
+                    <button class="btn btn-sm" onclick="validateJourney()">Check</button>
+                    <button class="btn btn-sm" data-perm="CAMPAIGNS_SEND" id="jrnRunNow" onclick="runJourneyNow()">Run a pass now</button>
+                    <button class="btn btn-danger btn-sm" data-perm="CAMPAIGNS_SEND" onclick="abortJourney()">Stop</button>
+                    <button class="btn btn-primary btn-sm" data-perm="CAMPAIGNS_SEND" id="jrnGo" onclick="activateJourney()">Activate</button>
+                </div>
+            </div>
+
+            <div class="alert warn" id="jrnPauseNote" style="display:none;margin-bottom:14px"></div>
+            <div id="jrnFindings" style="margin-bottom:14px"></div>
+
+            <div class="jrn-shell">
+                <div class="panel jrn-canvas-panel">
+                    <div class="panel-head">
+                        <h3>Flowchart</h3>
+                        <span class="spacer"></span>
+                        <span class="eyebrow" id="jrnHint">Click a step to edit it. Drag to move.</span>
+                        <button class="btn btn-sm" data-perm="CAMPAIGNS_WRITE" onclick="addJourneyNode('SOURCE')">+ Base sheet</button>
+                        <button class="btn btn-sm" data-perm="CAMPAIGNS_WRITE" onclick="addJourneyNode('EMAIL')">+ Email</button>
+                        <button class="btn btn-sm" data-perm="CAMPAIGNS_WRITE" onclick="addJourneyNode('SPLIT')">+ A/B</button>
+                        <button class="btn btn-sm" data-perm="CAMPAIGNS_WRITE" onclick="addJourneyNode('CONDITION')">+ Condition</button>
+                        <button class="btn btn-sm" data-perm="CAMPAIGNS_WRITE" onclick="addJourneyNode('WAIT')">+ Wait</button>
+                        <button class="btn btn-sm" data-perm="CAMPAIGNS_WRITE" onclick="addJourneyNode('EXIT')">+ Exit</button>
+                    </div>
+                    <div class="panel-body tight">
+                        <div class="jrn-canvas" id="jrnCanvas" tabindex="0"
+                             aria-label="Journey flowchart. Use tab to move between steps and enter to edit one.">
+                            <svg class="jrn-wires" id="jrnWires" aria-hidden="true"></svg>
+                        </div>
+                        <div class="jrn-status" id="jrnLive" aria-live="polite"></div>
+                    </div>
+                </div>
+
+                <div class="panel jrn-side">
+                    <div class="panel-head"><h3 id="jrnPanelTitle">Nothing selected</h3></div>
+                    <div class="panel-body" id="jrnPanel">
+                        <p class="sub" style="margin:0">Pick a step on the left, or add one from the toolbar above.
+                            Start with a base sheet: that is the list people enter from.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top:18px">
+                <div class="panel-head">
+                    <div class="tabs" style="margin:0">
+                        <div class="tab active" data-jtab="sheets" onclick="switchJourneyTab('sheets')">Conditional sheets</div>
+                        <div class="tab" data-jtab="log" onclick="switchJourneyTab('log')">What happened</div>
+                        <div class="tab" data-jtab="ab" onclick="switchJourneyTab('ab')">A/B results</div>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div id="jtab-sheets">
+                        <p class="sub" style="margin:0 0 12px">
+                            One sheet per outcome. A person sits in exactly one at a time and only ever
+                            moves up: someone who opens and then unsubscribes is filed as unsubscribed.
+                        </p>
+                        <div class="grid grid-kpi" id="jrnSheets"></div>
+                    </div>
+                    <div id="jtab-log" style="display:none">
+                        <div class="table-wrap"><table class="data">
+                            <thead><tr><th>When</th><th>What</th><th>Who</th><th>Detail</th></tr></thead>
+                            <tbody id="jrnEventBody"></tbody>
+                        </table></div>
+                        <div class="pager"><span class="count" id="jrnEventCount"></span>
+                            <button class="btn btn-sm" onclick="pageJourneyEvents(-1)">Prev</button>
+                            <button class="btn btn-sm" onclick="pageJourneyEvents(1)">Next</button>
+                        </div>
+                    </div>
+                    <div id="jtab-ab" style="display:none">
+                        <label class="field" style="max-width:320px"><span>A/B step</span>
+                            <select class="input" id="jrnAbPicker" onchange="loadJourneyVariants()"></select></label>
+                        <div id="jrnAbBody"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ------------------------- COMPOSER ------------------------- -->
+        <section class="view" id="view-composer">
+            <div class="topbar">
+                <div><h1 id="composerTitle">Composer</h1><p class="sub">Write it, preview it, test it, then send or schedule.</p></div>
+                <div class="topbar-actions">
+                    <span class="pill pill-draft plain" id="composerStatus">DRAFT</span>
+                    <button class="btn" onclick="newCampaign()">New</button>
+                </div>
+            </div>
+            <div class="grid grid-2">
+                <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+                    <div class="panel">
+                        <div class="panel-head"><h3>1 &middot; Message</h3></div>
+                        <div class="panel-body">
+                            <div class="row">
+                                <label class="field"><span>Campaign name</span>
+                                    <input class="input" id="cName" placeholder="Newsletter_Aug_2026"></label>
+                                <label class="field"><span>From name <em class="hint">inbox sender</em></span>
+                                    <input class="input" id="cFromName" placeholder="Jarurat Care Foundation"></label>
+                            </div>
+                            <label class="field"><span>Subject line</span>
+                                <input class="input" id="cSubject" placeholder="What if every cancer trial was one search away?" oninput="schedulePreview()"></label>
+                            <div class="row">
+                                <label class="field"><span>Preheader <em class="hint">grey preview text</em></span>
+                                    <input class="input" id="cPreheader" placeholder="A 30 second read" oninput="schedulePreview()"></label>
+                                <label class="field"><span>Reply-to <em class="hint">your Zoho inbox</em></span>
+                                    <input class="input" id="cReplyTo" placeholder="admin@jarurat.care"></label>
+                            </div>
+                            <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:2px">
+                                <label class="check"><input type="checkbox" id="cTrackOpens" checked> Track opens</label>
+                                <label class="check"><input type="checkbox" id="cTrackClicks" checked> Track clicks</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-head"><h3>2 &middot; Creative</h3><span class="spacer"></span>
+                            <button class="btn btn-sm" onclick="loadTemplateIntoComposer()">Insert template</button>
+                            <button class="btn btn-sm" onclick="saveComposerAsTemplate()">Save as template</button>
+                        </div>
+                        <div class="panel-body">
+                            <div class="tabs">
+                                <div class="tab active" data-tab="code" onclick="switchComposerTab('code')">HTML</div>
+                                <div class="tab" data-tab="preview" onclick="switchComposerTab('preview')">Preview</div>
+                                <div class="tab" data-tab="wire" onclick="switchComposerTab('wire')">On the wire</div>
+                            </div>
+                            <div id="tab-code">
+                                <div class="chip-row">
+                                    <span class="chip" onclick="insertTag('{{NAME}}')">{{NAME}}</span>
+                                    <span class="chip" onclick="insertTag('{{FIRST_NAME}}')">{{FIRST_NAME}}</span>
+                                    <span class="chip" onclick="insertTag('{{EMAIL}}')">{{EMAIL}}</span>
+                                    <span class="chip" onclick="insertTag('{{UNSUBSCRIBE_LINK}}')">{{UNSUBSCRIBE_LINK}}</span>
+                                </div>
+                                <textarea class="input" id="cHtml" rows="16" placeholder="Paste your email HTML here..." oninput="schedulePreview()"></textarea>
+                                <p style="font-size:12px;color:var(--text-mute);margin:9px 0 0">
+                                    Every link is click-tracked automatically. An open pixel and an unsubscribe
+                                    footer are added at send time when the creative lacks one.
+                                </p>
+                            </div>
+                            <div id="tab-preview" style="display:none">
+                                <div style="display:flex;gap:7px;margin-bottom:12px">
+                                    <button class="btn btn-sm" onclick="setPreviewWidth('desktop')">Desktop</button>
+                                    <button class="btn btn-sm" onclick="setPreviewWidth('mobile')">Mobile</button>
+                                </div>
+                                <div class="preview-shell"><iframe class="preview-frame" id="previewFrame" sandbox=""></iframe></div>
+                            </div>
+                            <div id="tab-wire" style="display:none">
+                                <p style="font-size:12.5px;color:var(--text-mute);margin:0 0 10px">
+                                    The exact HTML handed to Amazon SES, after tracking injection.
+                                </p>
+                                <pre class="code" id="wireOutput" style="max-height:430px;overflow:auto;white-space:pre-wrap">Save the campaign to see this.</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+                    <div class="panel">
+                        <div class="panel-head"><h3>3 &middot; Audience</h3><span class="spacer"></span>
+                            <span class="eyebrow" id="audienceCount">no list</span></div>
+                        <div class="panel-body">
+                            <div class="tabs" style="margin-bottom:12px">
+                                <div class="tab active" data-atab="list" onclick="switchAudienceTab('list')">Existing list</div>
+                                <div class="tab" data-atab="upload" onclick="switchAudienceTab('upload')">Upload or paste</div>
+                            </div>
+
+                            <div id="atab-list">
+                                <label class="field"><span>Send to list</span>
+                                    <select class="input" id="cList" onchange="onListChange()"><option value="">-- choose a list --</option></select>
+                                </label>
+                                <div id="audienceNote" style="font-size:12.5px;color:var(--text-dim)"></div>
+                            </div>
+
+                            <div id="atab-upload" style="display:none">
+                                <div class="dropzone" id="composerDrop"><b>Drop a CSV</b> or click to browse
+                                    <br><span style="font-size:12px">comma, semicolon or tab separated</span></div>
+                                <input type="file" id="composerCsv" accept=".csv,.tsv,.txt" hidden>
+                                <div style="text-align:center;font-size:12px;color:var(--text-mute);margin:9px 0">or paste</div>
+                                <textarea class="input" id="composerPaste" rows="5"
+                                          placeholder="One address per line, comma separated, Name &lt;a@b.com&gt;, or a block copied straight out of Excel"
+                                          oninput="debounce(detectPaste,350)()"></textarea>
+                                <div id="pasteVerdict" style="font-size:12px;color:var(--text-dim);margin-top:7px"></div>
+                                <button class="btn btn-primary" style="width:100%;margin-top:10px"
+                                        id="composerImportBtn" disabled onclick="openImportReview()">Review this audience</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-head"><h3>4 &middot; Test and send</h3></div>
+                        <div class="panel-body">
+                            <label class="field"><span>Send a test to</span>
+                                <div style="display:flex;gap:8px">
+                                    <input class="input" id="cTestTo" placeholder="you@example.com">
+                                    <button class="btn" onclick="sendTest()">Test</button>
+                                </div>
+                            </label>
+
+                            <!-- One input per merge tag the creative actually uses, rebuilt
+                                 as the user types. A test that cannot set {{HOSPITAL}}
+                                 cannot answer whether {{HOSPITAL}} works. -->
+                            <div id="cTestMerge" style="display:none;margin-bottom:12px">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                                    <span class="eyebrow">Test values</span>
+                                    <span class="spacer"></span>
+                                    <button class="btn btn-sm" onclick="fillSampleMergeValues()">Sample data</button>
+                                    <button class="btn btn-sm" onclick="previewWithTestValues()">Preview</button>
+                                </div>
+                                <div id="cTestFields" class="merge-grid"></div>
+                                <p id="cTestNote" style="font-size:11.5px;color:var(--text-mute);margin:8px 0 0"></p>
+                            </div>
+
+                            <div style="display:flex;gap:9px;margin-bottom:9px">
+                                <button class="btn" style="flex:1" onclick="saveCampaign(true)">Save draft</button>
+                                <button class="btn" style="flex:1" data-perm="CAMPAIGNS_SEND" onclick="openScheduleModal()">Schedule</button>
+                            </div>
+                            <button class="btn btn-primary" style="width:100%" id="sendBtn"
+                                    data-perm="CAMPAIGNS_SEND" onclick="sendCampaign()">Send now</button>
+
+                            <div class="progress-card" id="progressCard" style="display:none">
+                                <div style="display:flex;align-items:center;gap:8px">
+                                    <span class="eyebrow" id="progressLabel">Sending</span>
+                                    <span style="margin-left:auto" class="mono" id="progressPct">0%</span>
+                                </div>
+                                <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+                                <div class="progress-meta">
+                                    <span>sent <b id="pgSent">0</b></span><span>failed <b id="pgFailed">0</b></span>
+                                    <span>skipped <b id="pgSkipped">0</b></span><span>of <b id="pgTotal">0</b></span>
+                                </div>
+                                <div id="pgError" style="font-size:12px;color:var(--danger);margin-top:6px"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-head"><h3>Link performance</h3></div>
+                        <div class="panel-body tight"><div class="table-wrap">
+                            <table class="data">
+                                <thead><tr><th>Destination</th><th class="num">Unique</th><th class="num">Total</th></tr></thead>
+                                <tbody id="linkBody"></tbody>
+                            </table>
+                        </div></div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-head"><h3>Manage</h3></div>
+                        <div class="panel-body" style="display:flex;flex-direction:column;gap:8px">
+                            <button class="btn" onclick="exportCampaign('')">Export all recipients</button>
+                            <button class="btn" onclick="exportCampaign('SENT')">Export delivered</button>
+                            <button class="btn" data-perm="CAMPAIGNS_SEND" onclick="requeueFailed()">Requeue failed</button>
+                            <button class="btn btn-danger" data-perm="CAMPAIGNS_WRITE" onclick="deleteCampaign()">Delete campaign</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top:18px">
+                <div class="panel-head"><h3>Recipients</h3><span class="spacer"></span>
+                    <input class="input" id="rSearch" placeholder="Search" style="max-width:210px" oninput="debounce(loadRecipients,300)()">
+                    <select class="input" id="rStatus" style="max-width:160px" onchange="loadRecipients()">
+                        <option value="">All</option><option value="SENT">Delivered</option>
+                        <option value="PENDING">Pending</option><option value="FAILED">Failed</option>
+                        <option value="SKIPPED">Skipped</option>
+                    </select>
+                </div>
+                <div class="panel-body tight"><div class="table-wrap">
+                    <table class="data">
+                        <thead><tr><th>Email</th><th>Name</th><th>Status</th><th class="num">Opens</th><th class="num">Clicks</th><th>Sent</th></tr></thead>
+                        <tbody id="recipientBody"></tbody>
+                    </table>
+                </div>
+                <div class="pager"><span class="count" id="rCount"></span>
+                    <button class="btn btn-sm" onclick="pageRecipients(-1)">Prev</button>
+                    <button class="btn btn-sm" onclick="pageRecipients(1)">Next</button>
+                </div></div>
+            </div>
+        </section>
+
+        <!-- --------------------------- LISTS -------------------------- -->
+        <section class="view" id="view-lists">
+            <div class="topbar">
+                <div><h1>Lists</h1><p class="sub">Reusable audiences. A person lives once and sits on as many lists as you like.</p></div>
+                <div class="topbar-actions">
+                    <button class="btn btn-primary" data-perm="LISTS_WRITE" onclick="openModal('modalList')">New list</button>
+                </div>
+            </div>
+            <div class="panel"><div class="panel-body tight"><div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>List</th><th>Type</th><th class="num">Members</th><th class="num">Mailable</th><th>Created</th><th></th></tr></thead>
+                    <tbody id="listBody"></tbody>
+                </table>
+            </div></div></div>
+        </section>
+
+        <!-- ------------------------ SUBSCRIBERS ----------------------- -->
+        <section class="view" id="view-subscribers">
+            <div class="topbar">
+                <div><h1>Subscribers</h1><p class="sub">Everyone you hold, and what they did with your mail.</p></div>
+                <div class="topbar-actions">
+                    <button class="btn" onclick="exportSubscribers()">Export CSV</button>
+                    <button class="btn btn-primary" data-perm="SUBSCRIBERS_WRITE" onclick="openModal('modalSubscriber')">Add subscriber</button>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-head">
+                    <input class="input" id="sSearch" placeholder="Search name, email, company" style="max-width:260px" oninput="debounce(loadSubscribers,300)()">
+                    <select class="input" id="sList" style="max-width:210px" onchange="loadSubscribers()"><option value="">All lists</option></select>
+                    <select class="input" id="sStatus" style="max-width:170px" onchange="loadSubscribers()">
+                        <option value="">All statuses</option><option value="SUBSCRIBED">Subscribed</option>
+                        <option value="UNSUBSCRIBED">Unsubscribed</option><option value="BOUNCED">Bounced</option>
+                        <option value="COMPLAINED">Complained</option>
+                    </select>
+                </div>
+                <div class="panel-body tight"><div class="table-wrap">
+                    <table class="data">
+                        <thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Status</th>
+                            <th class="num">Sent</th><th class="num">Opens</th><th class="num">Clicks</th><th></th></tr></thead>
+                        <tbody id="subscriberBody"></tbody>
+                    </table>
+                </div>
+                <div class="pager"><span class="count" id="sCount"></span>
+                    <button class="btn btn-sm" onclick="pageSubscribers(-1)">Prev</button>
+                    <button class="btn btn-sm" onclick="pageSubscribers(1)">Next</button>
+                </div></div>
+            </div>
+        </section>
+
+        <!-- ------------------------ SUPPRESSION ----------------------- -->
+        <section class="view" id="view-suppression">
+            <div class="topbar">
+                <div><h1>Suppression list</h1><p class="sub">Never mailed again. Synced from Amazon SES every 15 minutes.</p></div>
+            </div>
+            <div class="panel" style="margin-bottom:18px" data-perm="SUPPRESSION_WRITE">
+                <div class="panel-body" style="display:flex;gap:9px;flex-wrap:wrap">
+                    <input class="input" id="supAdd" placeholder="Suppress an address permanently" style="flex:1 1 320px">
+                    <button class="btn btn-primary" onclick="addSuppression()">Suppress</button>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-head">
+                    <input class="input" id="supSearch" placeholder="Search address" style="max-width:250px" oninput="debounce(loadSuppressions,300)()">
+                    <select class="input" id="supReason" style="max-width:190px" onchange="loadSuppressions()">
+                        <option value="">All reasons</option><option value="UNSUBSCRIBED">Unsubscribed</option>
+                        <option value="BOUNCE">Bounced</option><option value="COMPLAINT">Complaint</option>
+                        <option value="MANUAL">Added manually</option>
+                    </select>
+                </div>
+                <div class="panel-body tight"><div class="table-wrap">
+                    <table class="data">
+                        <thead><tr><th>Email</th><th>Reason</th><th>Added</th><th></th></tr></thead>
+                        <tbody id="supBody"></tbody>
+                    </table>
+                </div>
+                <div class="pager"><span class="count" id="supCount"></span>
+                    <button class="btn btn-sm" onclick="pageSuppressions(-1)">Prev</button>
+                    <button class="btn btn-sm" onclick="pageSuppressions(1)">Next</button>
+                </div></div>
+            </div>
+        </section>
+
+        <!-- ------------------------ VERIFY LIST ----------------------- -->
+        <section class="view" id="view-verify">
+            <div class="topbar">
+                <div><h1>Verify list</h1><p class="sub">Check addresses before you send, so a bad list never touches your reputation.</p></div>
+                <div class="topbar-actions">
+                    <button class="btn" onclick="loadVerify()">Refresh</button>
+                    <button class="btn btn-primary" id="verifyExportBtn" onclick="exportCleanList()">Export clean list</button>
+                </div>
+            </div>
+            <div class="note" style="margin-bottom:18px">A single campaign to a stale scraped list can put the domain on a blocklist for months.
+                Verification runs syntax, domain, MX, disposable-provider and role-account checks before a message leaves.</div>
+
+            <div class="panel" style="margin-bottom:18px">
+                <div class="panel-head">
+                    <select class="input" id="verifyList" style="max-width:280px" onchange="loadVerifySummary()"></select>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-mute)">
+                        <input type="checkbox" id="verifyForce"> Re-check addresses already verified
+                    </label>
+                    <button class="btn btn-primary btn-sm" onclick="startListVerification()">Verify this list</button>
+                </div>
+                <div class="panel-body">
+                    <div class="grid grid-kpi" id="verifyKpis"></div>
+                    <div id="verifyProgress" style="display:none;margin-top:14px">
+                        <div style="height:7px;border-radius:99px;background:var(--border);overflow:hidden">
+                            <div id="verifyBar" style="height:100%;width:0;background:var(--accent);transition:width .3s"></div>
+                        </div>
+                        <div class="sub" id="verifyProgressText" style="margin-top:7px"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-bottom:18px">
+                <div class="panel-head"><h3>Check a few addresses now</h3></div>
+                <div class="panel-body" style="display:flex;gap:9px;flex-wrap:wrap">
+                    <input class="input" id="verifyAdhoc" placeholder="one@example.org, two@example.org" style="flex:1 1 340px">
+                    <button class="btn" onclick="verifyAdhoc()">Check</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <input class="input" id="verifySearch" placeholder="Search address" style="max-width:250px" oninput="debounce(loadVerifyResults,300)()">
+                    <select class="input" id="verifyVerdict" style="max-width:190px" onchange="loadVerifyResults()">
+                        <option value="">All verdicts</option>
+                        <option value="DELIVERABLE">Deliverable</option>
+                        <option value="RISKY">Risky</option>
+                        <option value="UNDELIVERABLE">Undeliverable</option>
+                        <option value="UNKNOWN">Unknown</option>
+                    </select>
+                </div>
+                <div class="panel-body tight"><div class="table-wrap">
+                    <table class="data">
+                        <thead><tr><th>Address</th><th>Verdict</th><th>Reason</th><th>Syntax</th><th>MX</th><th>Mailbox</th><th>Checked</th></tr></thead>
+                        <tbody id="verifyBody"></tbody>
+                    </table>
+                </div>
+                <div class="pager"><span class="count" id="verifyCount"></span>
+                    <button class="btn btn-sm" onclick="pageVerify(-1)">Prev</button>
+                    <button class="btn btn-sm" onclick="pageVerify(1)">Next</button>
+                </div></div>
+            </div>
+        </section>
+
+        <!-- ------------------------- ANALYTICS ------------------------ -->
+        <section class="view" id="view-analytics">
+            <div class="topbar">
+                <div><h1>Analytics</h1><p class="sub">Opens filtered for Apple Mail Privacy Protection and scanners, so the rate means something.</p></div>
+                <div class="topbar-actions">
+                    <select class="input" id="anCampaign" style="max-width:250px" onchange="loadAnalytics()"></select>
+                    <select class="input" id="anDays" style="max-width:140px" onchange="loadAnalytics()">
+                        <option value="7">Last 7 days</option>
+                        <option value="30" selected>Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-kpi" id="anKpis" style="margin-bottom:18px"></div>
+            <div class="note" id="anClassifier" style="margin-bottom:18px"></div>
+
+            <!-- Who actually did what. Every tile opens the people behind it, because a
+                 number you cannot click is a number nobody can act on. -->
+            <div class="panel" id="anSegmentPanel" style="margin-bottom:18px;display:none">
+                <div class="panel-head"><h3>What people did</h3><span class="spacer"></span>
+                    <span class="eyebrow" id="anSegmentRange"></span></div>
+                <div class="panel-body">
+                    <p class="sub" style="margin:0 0 10px">Everyone delivered to is in exactly one of these four.</p>
+                    <div class="grid grid-kpi" id="anSegmentsExclusive" style="margin-bottom:16px"></div>
+                    <p class="sub" style="margin:0 0 10px">These overlap with the four above, and with each other.</p>
+                    <div class="grid grid-kpi" id="anSegmentsOverlap"></div>
+                    <div class="note" id="anSegmentCaveat" style="margin-top:14px"></div>
+                </div>
+            </div>
+
+            <div class="panel" id="anTtoPanel" style="margin-bottom:18px;display:none">
+                <div class="panel-head"><h3>When this audience reads its mail</h3>
+                    <span class="spacer"></span><span class="eyebrow" id="anTtoMedian"></span></div>
+                <div class="panel-body">
+                    <div class="table-wrap">
+                        <svg id="anTtoChart" viewBox="0 0 560 210" width="100%" height="210"
+                             role="img" aria-label="How long after sending people first opened"></svg>
+                    </div>
+                    <div class="note" id="anTtoBasis" style="margin-top:10px"></div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-bottom:18px">
+                <div class="panel-head"><h3>Daily activity</h3><span class="sub" id="anSeriesRange"></span></div>
+                <div class="panel-body">
+                    <div class="table-wrap"><svg id="anChart" viewBox="0 0 860 240" width="100%" height="240" preserveAspectRatio="none"
+                         role="img" aria-label="Sends and reliable opens per day"></svg></div>
+                    <div class="chart-legend" style="justify-content:flex-start;margin-top:10px">
+                        <span class="chart-legend-item"><i style="background:#2f6fed"></i>Sent</span>
+                        <span class="chart-legend-item"><i style="background:#19a7a0"></i>Reliable opens</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="panel">
+                    <div class="panel-head"><h3>Most clicked links</h3></div>
+                    <div class="panel-body tight"><div class="table-wrap">
+                        <table class="data">
+                            <thead><tr><th>Link</th><th>Clicks</th><th>People</th><th>Share</th></tr></thead>
+                            <tbody id="anLinks"></tbody>
+                        </table>
+                    </div></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-head"><h3>Where it was read</h3></div>
+                    <div class="panel-body tight"><div class="table-wrap">
+                        <table class="data">
+                            <thead><tr><th>Client</th><th>Opens</th><th>Share</th></tr></thead>
+                            <tbody id="anClients"></tbody>
+                        </table>
+                    </div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ------------------------ MESSAGE LOG ----------------------- -->
+        <section class="view" id="view-messagelog">
+            <div class="topbar">
+                <div><h1>Message log</h1><p class="sub">Every message, searchable. Mail sent from Inbox carries the receiving server's own reply; campaign and transactional sends show what SES answered.</p></div>
+                <div class="topbar-actions"><button class="btn" onclick="loadMessageLog()">Refresh</button></div>
+            </div>
+            <div class="grid grid-kpi" id="mlKpis" style="margin-bottom:18px"></div>
+            <div class="panel">
+                <div class="panel-head">
+                    <input class="input" id="mlSearch" placeholder="Recipient, subject or message ID" style="flex:1 1 260px" oninput="debounce(loadMessageLog,300)()">
+                    <select class="input" id="mlOutcome" style="max-width:180px" onchange="loadMessageLog()">
+                        <option value="">All outcomes</option>
+                    </select>
+                    <select class="input" id="mlDirection" style="max-width:150px" onchange="loadMessageLog()">
+                        <option value="">Both ways</option>
+                        <option value="OUTBOUND">Outbound</option>
+                        <option value="INBOUND">Inbound</option>
+                    </select>
+                </div>
+                <div class="panel-body tight"><div class="table-wrap">
+                    <table class="data">
+                        <thead><tr><th>Time</th><th>To</th><th>Subject</th><th>Outcome</th><th>Server response</th><th></th></tr></thead>
+                        <tbody id="mlBody"></tbody>
+                    </table>
+                </div>
+                <div class="pager"><span class="count" id="mlCount"></span>
+                    <button class="btn btn-sm" onclick="pageMessageLog(-1)">Prev</button>
+                    <button class="btn btn-sm" onclick="pageMessageLog(1)">Next</button>
+                </div></div>
+            </div>
+        </section>
+
+        <!-- ------------------------- TEMPLATES ------------------------ -->
+        <section class="view" id="view-templates">
+            <div class="topbar">
+                <div><h1>Templates</h1><p class="sub">Marketing creatives, and the transactional templates your systems call by slug.</p></div>
+                <div class="topbar-actions">
+                    <button class="btn btn-primary" data-perm="TEMPLATES_WRITE" onclick="openTemplateEditor(null)">New template</button>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-head">
+                    <select class="input" id="tType" style="max-width:210px" onchange="loadTemplates()">
+                        <option value="">All types</option><option value="MARKETING">Marketing</option>
+                        <option value="TRANSACTIONAL">Transactional</option>
+                    </select>
+                </div>
+                <div class="panel-body tight"><div class="table-wrap">
+                    <table class="data">
+                        <thead><tr><th>Name</th><th>Slug</th><th>Type</th><th>Merge tags</th><th>Created</th><th></th></tr></thead>
+                        <tbody id="templateBody"></tbody>
+                    </table>
+                </div></div>
+            </div>
+        </section>
+
+        <!-- ----------------------- TRANSACTIONAL ---------------------- -->
+        <section class="view" id="view-transactional">
+            <div class="topbar">
+                <div><h1>Transactional</h1><p class="sub">One-off mail sent by slug. This is what the HR system calls when an interview is booked.</p></div>
+            </div>
+            <div class="grid grid-2">
+                <div class="panel">
+                    <div class="panel-head"><h3>Delivery log</h3><span class="spacer"></span>
+                        <input class="input" id="txSearch" placeholder="Search" style="max-width:200px" oninput="debounce(loadTransactional,300)()">
+                        <select class="input" id="txStatus" style="max-width:150px" onchange="loadTransactional()">
+                            <option value="">All</option><option value="SENT">Sent</option>
+                            <option value="FAILED">Failed</option><option value="SUPPRESSED">Suppressed</option>
+                        </select>
+                    </div>
+                    <div class="panel-body tight"><div class="table-wrap">
+                        <table class="data">
+                            <thead><tr><th>To</th><th>Template</th><th>Status</th><th>Via</th><th>When</th></tr></thead>
+                            <tbody id="txBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="pager"><span class="count" id="txCount"></span>
+                        <button class="btn btn-sm" onclick="pageTransactional(-1)">Prev</button>
+                        <button class="btn btn-sm" onclick="pageTransactional(1)">Next</button>
+                    </div></div>
+                </div>
+                <div class="panel" data-perm="TRANSACTIONAL_SEND">
+                    <div class="panel-head"><h3>Send one now</h3></div>
+                    <div class="panel-body">
+                        <label class="field"><span>Template</span>
+                            <select class="input" id="txTemplate" onchange="renderTxFields()"><option value="">-- choose --</option></select></label>
+                        <label class="field"><span>To</span>
+                            <input class="input" id="txTo" placeholder="candidate@example.com"></label>
+                        <div id="txFields"></div>
+                        <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="sendTransactional()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- --------------------------- TEAM --------------------------- -->
+        <section class="view" id="view-team">
+            <div class="topbar">
+                <div><h1>Team &amp; roles</h1><p class="sub">Who can sign in, and exactly what each of them may do.</p></div>
+                <div class="topbar-actions">
+                    <button class="btn btn-primary" data-perm="TEAM_WRITE" onclick="openModal('modalInvite')">Add member</button>
+                </div>
+            </div>
+            <div class="panel" style="margin-bottom:18px"><div class="panel-body tight"><div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>Member</th><th>Role</th><th>Status</th><th>Last sign in</th><th></th></tr></thead>
+                    <tbody id="teamBody"></tbody>
+                </table>
+            </div></div></div>
+            <div class="panel">
+                <div class="panel-head"><h3>What each role can do</h3></div>
+                <div class="panel-body tight"><div class="table-wrap">
+                    <table class="data">
+                        <thead><tr><th>Role</th><th>Intended for</th><th>Permissions</th></tr></thead>
+                        <tbody id="roleBody"></tbody>
+                    </table>
+                </div></div>
+            </div>
+        </section>
+
+        <!-- ------------------------- API KEYS ------------------------- -->
+        <section class="view" id="view-apikeys">
+            <div class="topbar">
+                <div><h1>API keys</h1><p class="sub">Machine credentials for the transactional API.</p></div>
+                <div class="topbar-actions"><button class="btn btn-primary" onclick="openModal('modalKey')">Create key</button></div>
+            </div>
+            <div class="panel" style="margin-bottom:18px"><div class="panel-body tight"><div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>Name</th><th>Key</th><th>Created</th><th>Last used</th><th class="num">Calls</th><th></th></tr></thead>
+                    <tbody id="keyBody"></tbody>
+                </table>
+            </div></div></div>
+            <div class="panel">
+                <div class="panel-head"><h3>Sending mail from another system</h3></div>
+                <div class="panel-body">
+                    <p style="font-size:13px;color:var(--text-dim);margin:0 0 14px">
+                        Point your HR tool at this endpoint. The template is addressed by its slug, and
+                        every <span class="mono">{{MERGE_TAG}}</span> in it becomes a key in <span class="mono">data</span>.
+                    </p>
+                    <pre class="code" id="apiExample"></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- -------------------------- AUDIT --------------------------- -->
+        <section class="view" id="view-audit">
+            <div class="topbar">
+                <div><h1>Audit log</h1><p class="sub">Who did what, from which address.</p></div>
+            </div>
+            <div class="panel">
+                <div class="panel-head">
+                    <input class="input" id="aSearch" placeholder="Search actor, action or target" style="max-width:300px" oninput="debounce(loadAudit,300)()">
+                </div>
+                <div class="panel-body tight"><div class="table-wrap">
+                    <table class="data">
+                        <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Target</th><th>Detail</th><th>IP</th></tr></thead>
+                        <tbody id="auditBody"></tbody>
+                    </table>
+                </div>
+                <div class="pager"><span class="count" id="aCount"></span>
+                    <button class="btn btn-sm" onclick="pageAudit(-1)">Prev</button>
+                    <button class="btn btn-sm" onclick="pageAudit(1)">Next</button>
+                </div></div>
+            </div>
+        </section>
+
+        <!-- ------------------------- MAILBOXES ------------------------- -->
+        <!-- These are real accounts on the mail server, not app users. Creating one
+        here makes the address start receiving mail within seconds, and deleting
+        one stops mail for a live address, which is why it sits behind
+        MAILBOX_MANAGE rather than TEAM_WRITE. -->
+        <section class="view" id="view-mailboxes">
+        <div class="topbar">
+        <div><h1>Mailboxes</h1><p class="sub">Real accounts on the mail server. A mailbox created here receives mail immediately.</p></div>
+        <div class="topbar-actions"><button class="btn btn-primary" onclick="openMailboxCreate()">Create mailbox</button></div>
+        </div>
+        <div id="mbNotice"></div>
+        <div class="panel"><div class="panel-body tight"><div class="table-wrap">
+        <table class="data">
+        <thead><tr><th>Mailbox</th><th>Name</th><th>Aliases</th><th class="num">Storage</th><th>Created</th><th></th></tr></thead>
+        <tbody id="mbBody"></tbody>
+        </table>
+        </div></div></div>
+        </section>
+
+        <!-- -------------------------- DOMAINS -------------------------- -->
+        <!-- Read only on purpose. DNS is edited at the registrar, not here, and a
+             screen that looked editable would imply this app could change it. -->
+        <section class="view" id="view-domains">
+            <div class="topbar">
+                <div><h1>Domains</h1><p class="sub">Sending domains and the DNS records mail delivery depends on.</p></div>
+                <div class="topbar-actions"><button class="btn" onclick="loadDomains()">Re-check DNS</button></div>
+            </div>
+            <div id="domainsBody"></div>
+        </section>
+
+    </main>
+</div>
+
+<!-- ============================== MODALS ============================== -->
+<div class="modal-backdrop" id="modalMailbox"><div class="modal">
+    <div class="modal-head"><h3>Create mailbox</h3></div>
+    <div class="modal-body">
+        <label class="field"><span>Address</span>
+            <div class="row" style="gap:0;align-items:center">
+                <input class="input" id="mbLocal" placeholder="accounts" autocomplete="off" style="border-top-right-radius:0;border-bottom-right-radius:0">
+                <span class="mono" id="mbDomainSuffix"
+                      style="padding:0 12px;color:var(--text-dim);border:1px solid var(--border);border-left:0;
+                             border-top-right-radius:var(--radius-sm);border-bottom-right-radius:var(--radius-sm);
+                             align-self:stretch;display:flex;align-items:center">@jarurat.care</span>
+            </div>
+        </label>
+        <label class="field"><span>Display name</span><input class="input" id="mbDesc" placeholder="Accounts team"></label>
+        <label class="field"><span>Password <em class="hint">at least 12 characters</em></span>
+            <div class="row" style="gap:8px">
+                <input class="input mono" id="mbPass" autocomplete="new-password">
+                <button class="btn" type="button" onclick="genMailboxPassword('mbPass')">Generate</button>
+            </div>
+        </label>
+        <label class="field"><span>Storage quota</span>
+            <select class="input" id="mbQuota">
+                <option value="1">1 GB</option><option value="2" selected>2 GB</option>
+                <option value="5">5 GB</option><option value="10">10 GB</option>
+            </select></label>
+        <div id="mbCreateResult"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modalMailbox')">Cancel</button>
+        <button class="btn btn-primary" id="mbCreateBtn" onclick="createMailbox()">Create</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modalMailboxPwd"><div class="modal">
+    <div class="modal-head"><h3 id="mbPwdTitle">Set password</h3></div>
+    <div class="modal-body">
+        <label class="field"><span>New password <em class="hint">at least 12 characters</em></span>
+            <div class="row" style="gap:8px">
+                <input class="input mono" id="mbNewPass" autocomplete="new-password">
+                <button class="btn" type="button" onclick="genMailboxPassword('mbNewPass')">Generate</button>
+            </div>
+        </label>
+        <div class="alert info" style="margin:0">The mailbox owner is signed out of IMAP and webmail once this changes.</div>
+        <div id="mbPwdResult"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modalMailboxPwd')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveMailboxPassword()">Save</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modalMailboxAliases"><div class="modal">
+    <div class="modal-head"><h3 id="mbAliasTitle">Aliases</h3></div>
+    <div class="modal-body">
+        <label class="field"><span>One per line, without the domain</span>
+            <textarea class="input mono" id="mbAliasText" rows="10" placeholder="jobs&#10;careers&#10;hiring"></textarea></label>
+        <div class="alert info" style="margin:0">Saving replaces the whole list, so keep every alias you still want.</div>
+        <div id="mbAliasResult"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modalMailboxAliases')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveMailboxAliases()">Save aliases</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modalList"><div class="modal">
+    <div class="modal-head"><h3>New list</h3></div>
+    <div class="modal-body">
+        <label class="field"><span>Name</span><input class="input" id="mlName" placeholder="Oncologists - Delhi NCR"></label>
+        <label class="field"><span>Description</span><input class="input" id="mlDesc" placeholder="Collected at the March 2026 awareness camp"></label>
+        <label class="field"><span>Type</span>
+            <select class="input" id="mlKind">
+                <option value="EVENT">Event attendees</option><option value="NEWSLETTER">Newsletter signups</option>
+                <option value="IMPORT" selected>Imported list</option><option value="HR">HR / candidates</option>
+                <option value="OTHER">Other</option>
+            </select></label>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modalList')">Cancel</button>
+        <button class="btn btn-primary" onclick="createList()">Create</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modalImport"><div class="modal">
+    <div class="modal-head"><h3 id="importTitle">Import subscribers</h3></div>
+    <div class="modal-body">
+        <div class="dropzone" id="dropzone"><b>Drop a CSV</b> or click to browse<br>
+            <span style="font-size:12px">recognised columns: name, first name, last name, email, phone, company</span></div>
+        <input type="file" id="csvFile" accept=".csv" hidden>
+        <div id="importResult" style="font-size:12.5px;color:var(--text-dim);margin-top:12px"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modalImport')">Done</button></div>
+</div></div>
+
+<!-- Single or multi. Asked once, up front, because the two are genuinely different
+     things and turning one into the other later is not a small edit. -->
+<div class="modal-backdrop" id="modalCampaignKind"><div class="modal">
+    <div class="modal-head"><h3>What kind of campaign?</h3></div>
+    <div class="modal-body">
+        <div class="kind-card" onclick="chooseCampaignKind('single')">
+            <b>Single email campaign</b>
+            <p>One message to one list. Write it, test it, send it now or schedule it.</p>
+        </div>
+        <div class="kind-card" onclick="chooseCampaignKind('multi')">
+            <b>Multi email journey</b>
+            <p>A flowchart. Pick your base sheets, then build stages of emails with A/B splits,
+               conditions on who opened or clicked, and loops for people who never respond.
+               Everything is scheduled.</p>
+        </div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modalCampaignKind')">Cancel</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modalJourney"><div class="modal">
+    <div class="modal-head"><h3>New journey</h3></div>
+    <div class="modal-body">
+        <label class="field"><span>Name</span>
+            <input class="input" id="mjName" placeholder="Trial Finder launch - doctors"></label>
+        <label class="field"><span>What is it for</span>
+            <input class="input" id="mjDesc" placeholder="Three stage launch with a nudge for non-openers"></label>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modalJourney')">Cancel</button>
+        <button class="btn btn-primary" onclick="createJourney()">Create</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modalJourneySettings"><div class="modal">
+    <div class="modal-head"><h3>Journey settings</h3></div>
+    <div class="modal-body">
+        <label class="field"><span>Name</span><input class="input" id="jsName"></label>
+        <div class="row">
+            <label class="field"><span>Start at <em class="hint">blank means as soon as you activate</em></span>
+                <input class="input" id="jsStart" type="datetime-local"></label>
+            <label class="field"><span>Hard stop <em class="hint">everyone still moving is let out</em></span>
+                <input class="input" id="jsDeadline" type="datetime-local"></label>
+        </div>
+        <div class="alert info" style="margin:4px 0 12px">
+            These three caps are what stop a loop becoming a mail bomb. They can be tightened
+            while the journey runs, but never loosened without pausing first.
+        </div>
+        <div class="row">
+            <label class="field"><span>Max emails per person</span>
+                <input class="input" id="jsMaxEmails" type="number" min="1" max="50"></label>
+            <label class="field"><span>Max loop passes</span>
+                <input class="input" id="jsMaxLoops" type="number" min="0" max="10"></label>
+        </div>
+        <div class="row">
+            <label class="field"><span>Minimum hours between emails</span>
+                <input class="input" id="jsMinGap" type="number" min="0" max="720"></label>
+            <label class="field"><span>Quiet hours <em class="hint">nothing sends between these</em></span>
+                <div style="display:flex;gap:6px;align-items:center">
+                    <input class="input" id="jsQuietStart" type="number" min="0" max="23" style="width:70px">
+                    <span style="color:var(--text-mute)">to</span>
+                    <input class="input" id="jsQuietEnd" type="number" min="0" max="23" style="width:70px">
+                </div></label>
+        </div>
+        <div class="row">
+            <label class="field"><span>From name</span><input class="input" id="jsFromName"></label>
+            <label class="field"><span>Reply-to</span><input class="input" id="jsReplyTo"></label>
+        </div>
+    </div>
+    <div class="modal-foot">
+        <button class="btn btn-danger" data-perm="CAMPAIGNS_WRITE" onclick="deleteJourney()">Delete journey</button>
+        <span class="spacer"></span>
+        <button class="btn" onclick="closeModal('modalJourneySettings')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveJourneySettings()">Save</button>
+    </div>
+</div></div>
+
+<!-- The journey email editor. Deliberately the same shape as the single-email
+     composer: HTML with merge chips on the left, a live preview on the right, a
+     test send with real values underneath. A journey email is an ordinary campaign
+     email, so editing one should not feel like a lesser thing. -->
+<div class="modal-backdrop" id="modalNodeEmail"><div class="modal wide">
+    <div class="modal-head"><h3 id="neTitle">Email</h3><span class="spacer"></span>
+        <span class="eyebrow" id="neWhen"></span></div>
+    <div class="modal-body">
+        <div class="grid grid-2" style="align-items:start">
+            <div style="min-width:0">
+                <label class="field"><span>Subject</span>
+                    <input class="input" id="neSubject" oninput="debounce(neRefresh,350)()"></label>
+                <div class="row">
+                    <label class="field"><span>Preheader <em class="hint">grey preview text</em></span>
+                        <input class="input" id="nePreheader" oninput="debounce(neRefresh,350)()"></label>
+                    <label class="field"><span>Send after <em class="hint">minutes</em></span>
+                        <input class="input" id="neDelay" type="number" min="0"></label>
+                </div>
+                <div class="row">
+                    <label class="field"><span>From name <em class="hint">blank uses the journey default</em></span>
+                        <input class="input" id="neFromName"></label>
+                    <label class="field"><span>Reply-to</span>
+                        <input class="input" id="neReplyTo"></label>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab active" data-netab="code" onclick="neTab('code')">HTML</div>
+                    <div class="tab" data-netab="preview" onclick="neTab('preview')">Preview</div>
+                </div>
+
+                <div id="ne-code">
+                    <div class="chip-row">
+                        <span class="chip" onclick="neInsert('{{NAME}}')">{{NAME}}</span>
+                        <span class="chip" onclick="neInsert('{{FIRST_NAME}}')">{{FIRST_NAME}}</span>
+                        <span class="chip" onclick="neInsert('{{LAST_NAME}}')">{{LAST_NAME}}</span>
+                        <span class="chip" onclick="neInsert('{{EMAIL}}')">{{EMAIL}}</span>
+                        <span class="chip" onclick="neInsert('{{COMPANY}}')">{{COMPANY}}</span>
+                        <span class="chip" onclick="neInsert('{{UNSUBSCRIBE_LINK}}')">{{UNSUBSCRIBE_LINK}}</span>
+                        <span class="spacer"></span>
+                        <button class="btn btn-sm" onclick="neInsertTemplate()">Insert template</button>
+                    </div>
+                    <textarea class="input mono" id="neHtml" rows="17"
+                              placeholder="Paste your email HTML here. Anything the single composer accepts works identically."
+                              oninput="debounce(neRefresh,350)()"></textarea>
+                    <p style="font-size:12px;color:var(--text-mute);margin:9px 0 0">
+                        Every link is click-tracked and an open pixel is added at send time,
+                        exactly as in a single-email campaign. The unsubscribe footer is added
+                        automatically when your HTML does not include one.
+                    </p>
+                </div>
+
+                <div id="ne-preview" style="display:none">
+                    <div style="display:flex;gap:7px;margin-bottom:10px">
+                        <button class="btn btn-sm" onclick="neWidth('desktop')">Desktop</button>
+                        <button class="btn btn-sm" onclick="neWidth('mobile')">Mobile</button>
+                    </div>
+                    <div class="preview-shell"><iframe class="preview-frame" id="nePreviewFrame" sandbox=""></iframe></div>
+                </div>
+            </div>
+
+            <div style="min-width:0">
+                <div class="panel" style="padding:14px;margin-bottom:14px">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+                        <span class="eyebrow">Send a test</span><span class="spacer"></span>
+                        <button class="btn btn-sm" onclick="neSampleValues()">Sample data</button>
+                        <button class="btn btn-sm" onclick="neTestSend()">Test</button>
+                    </div>
+                    <input class="input" id="neTestTo" placeholder="you@example.com" style="margin-bottom:9px">
+                    <div id="neTestFields" class="merge-grid"></div>
+                    <p id="neTestNote" style="font-size:11.5px;color:var(--text-mute);margin:9px 0 0"></p>
+                </div>
+
+                <div class="panel" style="padding:14px">
+                    <span class="eyebrow">How it renders</span>
+                    <div id="neRenderNote" style="font-size:12.5px;color:var(--text-dim);margin-top:8px;line-height:1.6"></div>
+                </div>
+
+                <div style="display:flex;gap:18px;margin-top:12px">
+                    <label class="check"><input type="checkbox" id="neTrackOpens"> Track opens</label>
+                    <label class="check"><input type="checkbox" id="neTrackClicks"> Track clicks</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-foot">
+        <button class="btn" onclick="closeModal('modalNodeEmail')">Cancel</button>
+        <button class="btn btn-primary" onclick="neSave()">Save this email</button>
+    </div>
+</div></div>
+
+<div class="modal-backdrop" id="modalSegment"><div class="modal wide">
+    <div class="modal-head"><h3 id="segTitle">Group</h3></div>
+    <div class="modal-body">
+        <p class="sub" id="segDesc" style="margin-top:0"></p>
+        <input class="input" id="segSearch" placeholder="Search name or email"
+               style="margin-bottom:12px" oninput="debounce(loadSegmentPeople,300)()">
+        <div class="table-wrap"><table class="data">
+            <thead><tr><th>Name</th><th>Email</th><th>Status</th>
+                       <th class="num">Opens</th><th class="num">Clicks</th><th>Sent</th></tr></thead>
+            <tbody id="segBody"></tbody>
+        </table></div>
+        <div class="pager"><span class="count" id="segCount"></span>
+            <button class="btn btn-sm" onclick="pageSegment(-1)">Prev</button>
+            <button class="btn btn-sm" onclick="pageSegment(1)">Next</button></div>
+    </div>
+    <div class="modal-foot">
+        <button class="btn" onclick="closeModal('modalSegment')">Close</button>
+        <button class="btn" onclick="exportSegment()">Export CSV</button>
+        <button class="btn btn-primary" data-perm="LISTS_WRITE" id="segSaveBtn"
+                onclick="saveSegmentAsList()">Save as a mailing list</button>
+    </div>
+</div></div>
+
+<div class="modal-backdrop" id="modalSheet"><div class="modal wide">
+    <div class="modal-head"><h3 id="sheetTitle">Sheet</h3></div>
+    <div class="modal-body">
+        <p class="sub" id="sheetDesc" style="margin-top:0"></p>
+        <div class="table-wrap"><table class="data">
+            <thead><tr><th>Name</th><th>Email</th><th>State</th><th class="num">Emails</th>
+                       <th class="num">Loops</th><th>Arm</th><th>Why they left</th></tr></thead>
+            <tbody id="sheetBody"></tbody>
+        </table></div>
+        <div class="pager"><span class="count" id="sheetCount"></span>
+            <button class="btn btn-sm" onclick="pageSheet(-1)">Prev</button>
+            <button class="btn btn-sm" onclick="pageSheet(1)">Next</button></div>
+    </div>
+    <div class="modal-foot">
+        <button class="btn" onclick="closeModal('modalSheet')">Close</button>
+        <button class="btn" onclick="exportSheet()">Export CSV</button>
+        <button class="btn btn-primary" data-perm="LISTS_WRITE" onclick="saveSheetAsList()">Save as a mailing list</button>
+    </div>
+</div></div>
+
+<!-- The composer's audience review. Four stacked sections: which column is what,
+     how the first rows will actually render, where the creative and the data
+     disagree, and where the people should land. -->
+<div class="modal-backdrop" id="modalAudienceReview"><div class="modal wide">
+    <div class="modal-head"><h3>Review this audience</h3></div>
+    <div class="modal-body">
+        <div id="arLoading" style="padding:26px 0;text-align:center;color:var(--text-dim)">Reading the file...</div>
+
+        <div id="arContent" style="display:none">
+            <div class="eyebrow" style="margin-bottom:8px">1 &middot; Columns</div>
+            <div class="table-wrap" style="margin-bottom:18px">
+                <table class="data">
+                    <thead><tr><th>Column in your file</th><th>Example values</th><th>Import as</th><th class="num">Blank</th></tr></thead>
+                    <tbody id="arMapBody"></tbody>
+                </table>
+            </div>
+
+            <div class="eyebrow" style="margin-bottom:8px">2 &middot; How the first rows will read</div>
+            <div id="arRender" style="margin-bottom:18px;font-size:12.5px"></div>
+
+            <div class="eyebrow" style="margin-bottom:8px">3 &middot; Checks</div>
+            <div id="arFindings" style="margin-bottom:18px"></div>
+
+            <div class="eyebrow" style="margin-bottom:8px">4 &middot; Where these people go</div>
+            <div id="arSummary" style="font-size:12.5px;color:var(--text-dim);margin-bottom:12px"></div>
+            <label class="check" style="margin-bottom:7px">
+                <input type="radio" name="arDest" value="new" checked onchange="onDestChange()"> Create a new list
+            </label>
+            <input class="input" id="arNewListName" placeholder="List name" style="margin:0 0 10px 22px;width:calc(100% - 22px)">
+            <label class="check" style="margin-bottom:7px">
+                <input type="radio" name="arDest" value="existing" onchange="onDestChange()"> Add to an existing list
+            </label>
+            <select class="input" id="arExistingList" disabled style="margin-left:22px;width:calc(100% - 22px)"></select>
+        </div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modalAudienceReview')">Cancel</button>
+        <button class="btn btn-primary" id="arConfirm" disabled onclick="runComposerImport()">Import and use this audience</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modalSubscriber"><div class="modal">
+    <div class="modal-head"><h3>Add subscriber</h3></div>
+    <div class="modal-body">
+        <label class="field"><span>Email</span><input class="input" id="msEmail" placeholder="person@example.com"></label>
+        <div class="row">
+            <label class="field"><span>First name</span><input class="input" id="msFirst"></label>
+            <label class="field"><span>Last name</span><input class="input" id="msLast"></label>
+        </div>
+        <label class="field"><span>Add to list</span>
+            <select class="input" id="msList"><option value="">-- none --</option></select></label>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modalSubscriber')">Cancel</button>
+        <button class="btn btn-primary" onclick="createSubscriber()">Add</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modalInvite"><div class="modal">
+    <div class="modal-head"><h3>Add team member</h3></div>
+    <div class="modal-body">
+        <label class="field"><span>Email</span><input class="input" id="miEmail" placeholder="person@jarurat.care"></label>
+        <label class="field"><span>Full name</span><input class="input" id="miName"></label>
+        <label class="field"><span>Role</span><select class="input" id="miRole"></select></label>
+        <label class="field"><span>Temporary password <em class="hint">at least 10 characters</em></span>
+            <input class="input" id="miPassword" type="text"></label>
+        <div class="alert info" style="margin:0">Share this password over a private channel. They should change it after signing in.</div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modalInvite')">Cancel</button>
+        <button class="btn btn-primary" onclick="inviteUser()">Create account</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modalKey"><div class="modal">
+    <div class="modal-head"><h3>Create API key</h3></div>
+    <div class="modal-body">
+        <label class="field"><span>What is it for</span><input class="input" id="mkName" placeholder="HR interview scheduler"></label>
+        <div id="mkResult"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modalKey')">Close</button>
+        <button class="btn btn-primary" id="mkCreate" onclick="createKey()">Create</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modalSchedule"><div class="modal">
+    <div class="modal-head"><h3>Schedule this campaign</h3></div>
+    <div class="modal-body">
+        <label class="field"><span>Send at <em class="hint">server time, IST</em></span>
+            <input class="input" id="schedWhen" type="datetime-local"></label>
+        <div class="alert info" style="margin:0">The queue is checked every minute, so the send starts within a minute of this time.</div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modalSchedule')">Cancel</button>
+        <button class="btn btn-primary" onclick="scheduleCampaign()">Schedule</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modalTemplate"><div class="modal wide">
+    <div class="modal-head"><h3 id="teTitle">Template</h3></div>
+    <div class="modal-body">
+        <div class="row">
+            <label class="field"><span>Name</span><input class="input" id="teName" placeholder="Interview Round 1"></label>
+            <label class="field"><span>Type</span>
+                <select class="input" id="teType"><option value="MARKETING">Marketing</option>
+                    <option value="TRANSACTIONAL">Transactional</option></select></label>
+        </div>
+        <label class="field"><span>Slug <em class="hint">how the API addresses it</em></span>
+            <input class="input" id="teSlug" placeholder="interview-round-1"></label>
+        <label class="field"><span>Subject</span><input class="input" id="teSubject"></label>
+        <label class="field"><span>HTML body</span><textarea class="input" id="teHtml" rows="12"></textarea></label>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modalTemplate')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveTemplate()">Save</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modalPickTemplate"><div class="modal">
+    <div class="modal-head"><h3>Insert a template</h3></div>
+    <div class="modal-body"><div id="pickTemplateBody"></div></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modalPickTemplate')">Cancel</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modalMessage"><div class="modal wide">
+    <div class="modal-head"><h3>Message detail</h3></div>
+    <div class="modal-body"><div id="messageDetailBody"></div></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('modalMessage')">Close</button></div>
+</div></div>
+
+<div id="toasts"></div>
+
+<script th:inline="javascript">
+    const PERMS = /*[[${permissions}]]*/ [];
+    const ME = { email: /*[[${userEmail}]]*/ '', name: /*[[${userName}]]*/ '', role: /*[[${userRole}]]*/ '' };
+</script>
+<script src="/js/charts.js"></script>
+<script src="/js/console.js"></script>
+<script src="/js/journey.js"></script>
+</body>
+</html>
