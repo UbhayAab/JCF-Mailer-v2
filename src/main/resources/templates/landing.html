@@ -1,26 +1,42 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>JCF Mailer | Home</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JCF Campaign Studio</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="icon" href="/logo.png">
 </head>
-<body class="d-flex align-items-center justify-content-center" style="height: 100vh;">
-    <div class="aurora-bg"><div class="aurora-blob-1"></div><div class="aurora-blob-2"></div></div>
-    
-    <div class="text-center animate-fade-up" style="max-width: 600px;">
-        
-        <!-- LOGO (Requires logo.png in src/main/resources/static/) -->
-        <img src="/logo.png" alt="Jarurat Care Foundation" style="max-height: 85px;" class="mb-4">
-        
-        <h1 class="fw-bold mb-3 text-gradient" style="font-size: 3.5rem;">JCF Mailer Core</h1>
-        <p class="text-muted mb-5" style="font-size: 1.2rem; line-height: 1.6;">Enterprise-grade communication architecture built exclusively for the Jarurat Care Foundation.</p>
-        
-        <div class="d-flex justify-content-center gap-3">
-            <a href="/login" class="btn-premium w-50">Send Bulk Emails</a>
-            <button class="btn-glass w-50" onclick="alert('Inbox Studio is under construction.')">Inbox Studio</button>
+<body>
+<div class="aurora-bg"></div>
+
+<div class="auth-wrap">
+    <div style="max-width:660px;text-align:center;animation:fade-up .5s cubic-bezier(.2,.7,.3,1)">
+
+        <img src="/logo.png" alt="Jarurat Care Foundation" style="max-height:72px;margin-bottom:24px">
+
+        <h1 style="font-size:clamp(2.1rem,6vw,3.2rem);font-weight:780;letter-spacing:-0.035em;margin:0 0 14px"
+            class="text-gradient">Campaign Studio</h1>
+
+        <p style="color:var(--text-dim);font-size:16.5px;line-height:1.65;margin:0 auto 32px;max-width:540px">
+            The sending platform behind Jarurat Care Foundation. Marketing campaigns,
+            transactional mail for the people team, and a shared subscriber base,
+            all on Amazon SES.
+        </p>
+
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <a href="/login" class="btn btn-primary" style="padding:12px 26px;font-size:14px">Sign in</a>
+            <a href="https://jarurat.care" class="btn" style="padding:12px 26px;font-size:14px">jarurat.care</a>
+        </div>
+
+        <div style="display:flex;gap:24px;justify-content:center;flex-wrap:wrap;margin-top:42px;
+                    font-size:12px;color:var(--text-mute)">
+            <span>50,000 emails / day</span>
+            <span>DKIM signed</span>
+            <span>Role based access</span>
+            <span>One-click unsubscribe</span>
         </div>
     </div>
+</div>
 </body>
 </html>

@@ -1,30 +1,53 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>JCF Mailer | Login</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sign in | JCF Campaign Studio</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="icon" href="/logo.png">
 </head>
-<body class="d-flex align-items-center justify-content-center" style="height: 100vh;">
-    <div class="aurora-bg"><div class="aurora-blob-1"></div><div class="aurora-blob-2"></div></div>
+<body>
+<div class="aurora-bg"></div>
 
-    <div class="glass-panel p-5 animate-fade-up" style="width: 100%; max-width: 420px;">
-        <h3 class="fw-bold text-center mb-4 text-gradient">Admin Login</h3>
-        
-        <div th:if="${error}" class="alert alert-danger" style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: #fca5a5;" th:text="${error}"></div>
-        
-        <form action="/login" method="POST">
-            <div class="mb-3">
-                <label class="form-label">Email Address</label>
-                <input type="email" name="email" class="form-control" placeholder="mailer@jarurat.care" required>
-            </div>
-            <div class="mb-4">
-                <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-control" placeholder="••••••••" required>
-            </div>
-            <button type="submit" class="btn-premium w-100">Authenticate System</button>
+<div class="auth-wrap">
+    <div class="auth-card">
+        <div style="display:flex;align-items:center;gap:11px;margin-bottom:24px">
+            <div class="brand-mark">JC</div>
+            <div class="brand-text">Campaign Studio<small>Jarurat Care Foundation</small></div>
+        </div>
+
+        <h2 style="margin:0 0 6px;font-size:20px;letter-spacing:-0.02em">Sign in</h2>
+        <p style="margin:0 0 20px;color:var(--text-mute);font-size:13px">
+            Use the account your administrator created for you.
+        </p>
+
+        <div class="alert" th:if="${param.error}">
+            That email and password combination did not work. After five failed
+            attempts the account locks for fifteen minutes.
+        </div>
+        <div class="alert ok" th:if="${param.loggedOut}">You have been signed out.</div>
+
+        <form th:action="@{/login}" method="post">
+            <label class="field">
+                <span>Email address</span>
+                <input class="input" type="email" name="email" placeholder="you@jarurat.care" required autofocus>
+            </label>
+            <label class="field">
+                <span>Password</span>
+                <input class="input" type="password" name="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" required>
+            </label>
+            <!-- th:action injects the CSRF hidden field automatically; adding one by
+                 hand renders it twice and sends a duplicated parameter. -->
+            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:4px;padding:11px">
+                Sign in
+            </button>
         </form>
+
+        <p style="margin:18px 0 0;font-size:11.5px;color:var(--text-mute);text-align:center">
+            Amazon SES &middot; ap-south-1 &middot; sessions expire after 8 hours
+        </p>
     </div>
+</div>
 </body>
 </html>
