@@ -449,7 +449,7 @@
                                     <span>sent <b id="pgSent">0</b></span><span>failed <b id="pgFailed">0</b></span>
                                     <span>skipped <b id="pgSkipped">0</b></span><span>of <b id="pgTotal">0</b></span>
                                 </div>
-                                <div id="pgError" style="font-size:12px;color:var(--danger);margin-top:6px"></div>
+                                <div id="pgError" style="font-size:12px;color:var(--danger-fg);margin-top:6px"></div>
                             </div>
                         </div>
                     </div>
@@ -595,7 +595,7 @@
             <div class="panel" style="margin-bottom:18px">
                 <div class="panel-head">
                     <select class="input" id="verifyList" style="max-width:280px" onchange="loadVerifySummary()"></select>
-                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-mute)">
+                    <label class="check" style="font-size:12px;color:var(--text-mute)">
                         <input type="checkbox" id="verifyForce"> Re-check addresses already verified
                     </label>
                     <button class="btn btn-primary btn-sm" onclick="startListVerification()">Verify this list</button>

@@ -33,7 +33,16 @@ async function api(url) {
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
   if (res.status === 401) { location.href = '/login'; throw new Error('signed out'); }
   if (res.status === 403) throw new Error('Your role does not allow that.');
-  if (!res.ok) throw new Error(await res.text());
+  // res.text() put the whole body on screen, so a Spring error page rendered in
+  // the alert as a raw JSON blob with a timestamp and a stack path in it. Read
+  // the message the server meant to send, and say something plain when there
+  // is not one, the same way post() already does.
+  if (!res.ok) {
+    let payload = null;
+    try { payload = await res.clone().json(); } catch (e) { /* not every error page is json */ }
+    throw new Error((payload && (payload.error || payload.message))
+      || 'The server could not answer that request.');
+  }
   return res.json();
 }
 
@@ -666,7 +675,7 @@ function detectPaste() {
   const parsed = lines.map(extractAddress);
   const good = parsed.filter(Boolean);
   if (good.length === 0) {
-    verdict.innerHTML = '<span style="color:var(--danger)">No email addresses found in what you pasted. '
+    verdict.innerHTML = '<span style="color:var(--danger-fg)">No email addresses found in what you pasted. '
       + 'Expected one address per line, comma separated addresses, or a spreadsheet selection.</span>';
     return;
   }
@@ -757,7 +766,7 @@ async function loadReview() {
     Object.keys(data.mapping || {}).forEach(k => { reviewMapping[k] = data.mapping[k]; });
     renderReview(data);
   } catch (e) {
-    $('arLoading').innerHTML = '<span style="color:var(--danger)">' + esc(e.message) + '</span>';
+    $('arLoading').innerHTML = '<span style="color:var(--danger-fg)">' + esc(e.message) + '</span>';
   }
 }
 
@@ -1061,7 +1070,7 @@ async function loadRecipients() {
   $('recipientBody').innerHTML = d.rows.length ? d.rows.map(r =>
     '<tr><td class="mono">' + esc(r.email) + '</td><td>' + esc(r.name) + '</td>'
     + '<td>' + statusPill(r.status)
-      + (r.failReason ? '<br><span style="font-size:11px;color:var(--danger)" class="truncate" title="'
+      + (r.failReason ? '<br><span style="font-size:11px;color:var(--danger-fg)" class="truncate" title="'
         + attr(r.failReason) + '">' + esc(r.failReason) + '</span>' : '') + '</td>'
     + '<td class="num">' + num(r.openCount) + '</td><td class="num">' + num(r.clickCount) + '</td>'
     + '<td class="mono">' + esc(r.sentAt || '-') + '</td></tr>').join('')
@@ -1391,7 +1400,7 @@ async function loadTransactional() {
   $('txBody').innerHTML = d.rows.length ? d.rows.map(t =>
     '<tr><td class="mono">' + esc(t.to) + '</td><td class="mono">' + esc(t.template) + '</td>'
     + '<td>' + statusPill(t.status)
-      + (t.error ? '<br><span style="font-size:11px;color:var(--danger)" class="truncate" title="'
+      + (t.error ? '<br><span style="font-size:11px;color:var(--danger-fg)" class="truncate" title="'
         + attr(t.error) + '">' + esc(t.error) + '</span>' : '') + '</td>'
     + '<td class="truncate" style="max-width:150px">' + esc(t.sentVia) + '</td>'
     + '<td class="mono">' + esc(t.at) + '</td></tr>').join('')
@@ -1670,7 +1679,7 @@ function verdictPill(verdict, label) {
 /** The server sends "ok", "no" or "" so every check column renders the same three ways. */
 function mark(value) {
   if (value === 'ok') return '<span style="color:var(--success)">&#10003;</span>';
-  if (value === 'no') return '<span style="color:var(--danger)">&#10007;</span>';
+  if (value === 'no') return '<span style="color:var(--danger-fg)">&#10007;</span>';
   return '<span style="color:var(--text-faint)">&ndash;</span>';
 }
 
