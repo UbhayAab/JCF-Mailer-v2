@@ -6,149 +6,300 @@
     <title>Jarurat Mail</title>
     <link rel="icon" href="/logo.png">
     <style>
-        /* Tokens are the ones from the design preview, kept name for name so the two
-           files stay comparable. This page carries its own stylesheet rather than
-           extending the console's, because the console is a scrolling document and
-           this is a fixed three pane app. */
+        /* ==================================================================
+           Jarurat Mail - webmail surface.
+           One design system with Campaign Studio: the same charcoal tokens,
+           the same type scale, the same buttons, pills, fields and modals as
+           static/css/style.css. The values below are copied from that file
+           name for name, because this page must render with zero external
+           requests, but nothing here may drift from it.
+
+           There is deliberately no light palette and no prefers-color-scheme
+           block. The console has one theme; a second one here was where a
+           blue slate kept coming back whenever the operating system was set
+           to light.
+           ================================================================== */
         :root {
-            --bg:#f4f6f7; --surface:#ffffff; --surface-2:#eef2f3; --rail:#12212a;
-            --ink:#14212a; --ink-2:#4a5f6c; --ink-3:#7b8d99;
-            --line:#dde5e8; --line-2:#eaf0f2;
-            --accent:#0089a8; --accent-ink:#00697f; --accent-soft:#e2f2f6;
-            --good:#1f8a53; --good-soft:#e3f3ea;
-            --warn:#b3651a; --warn-soft:#fbeee1;
-            --crit:#a3342f; --crit-soft:#fbeae9;
-            --c1:#0089a8; --c2:#b3651a; --c3:#7a4bb5; --c4:#1f8a53;
-            --serif:"Iowan Old Style",Georgia,"Times New Roman",serif;
-            --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-            --mono:ui-monospace,"Cascadia Mono","SF Mono",Consolas,monospace;
-            --r:6px;
+            color-scheme: dark;
+
+            /* surfaces: flat charcoal, never navy, never purple */
+            --bg:            #191919;
+            --panel:         #202020;
+            --panel-2:       #1c1c1c;
+            --panel-3:       #2a2a2a;
+            --panel-4:       #333333;
+            --panel-hover:   #2a2a2a;
+            --sidebar-bg:    #1c1c1c;
+            --field-bg:      #262626;
+            --field-bg-focus:#2a2a2a;
+            --border:        rgba(255,255,255,0.09);
+            --border-strong: rgba(255,255,255,0.16);
+            --border-soft:   rgba(255,255,255,0.055);
+
+            /* text, checked for AA contrast on #202020 and on #1c1c1c */
+            --text:      #eaeaea;
+            --text-dim:  #bdbdbd;
+            --text-mute: #9a9a9a;
+            --text-faint:#888888;
+
+            /* accent: one blue, used as an edge and a single primary button,
+               never as a large fill */
+            --primary:      #2f6fed;
+            --primary-2:    #4c8dff;
+            --primary-3:    #82b1ff;
+            --primary-hover:#3a7bf5;
+            --primary-fg:   #6ea8fe;
+            --accent:       #19a7a0;
+            --success:      #1f9d55;
+            --warning:      #d99e0b;
+            --danger:       #e0483c;
+            --success-fg:   #4cc38a;
+            --warning-fg:   #e3b341;
+            --danger-fg:    #f2776b;
+
+            --radius:    8px;
+            --radius-sm: 6px;
+            --radius-xs: 4px;
+            --shadow:     0 1px 2px rgba(0,0,0,.30);
+            --shadow-pop: 0 10px 32px rgba(0,0,0,.48);
+            --mono: ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Consolas,monospace;
+            --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
         }
-        @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
-            --bg:#191919; --surface:#202020; --surface-2:#1c1c1c; --rail:#1c1c1c;
-            --ink:#eaeaea; --ink-2:#bdbdbd; --ink-3:#9a9a9a;
-            --line:rgba(255,255,255,0.09); --line-2:rgba(255,255,255,0.06);
-            --accent:#2f6fed; --accent-ink:#6ea8fe; --accent-soft:rgba(47,111,237,0.16);
-            --good:#4cc38a; --good-soft:rgba(31,157,85,0.18);
-            --warn:#e3b341; --warn-soft:rgba(217,158,11,0.18);
-            --crit:#f2776b; --crit-soft:rgba(224,72,60,0.18);
-            --c1:#2f6fed; --c2:#e3b341; --c3:#8b5cf6; --c4:#4cc38a;
-        }}
-        :root[data-theme="dark"]{
-            --bg:#191919; --surface:#202020; --surface-2:#1c1c1c; --rail:#1c1c1c;
-            --ink:#eaeaea; --ink-2:#bdbdbd; --ink-3:#9a9a9a;
-            --line:rgba(255,255,255,0.09); --line-2:rgba(255,255,255,0.06);
-            --accent:#2f6fed; --accent-ink:#6ea8fe; --accent-soft:rgba(47,111,237,0.16);
-            --good:#4cc38a; --good-soft:rgba(31,157,85,0.18);
-            --warn:#e3b341; --warn-soft:rgba(217,158,11,0.18);
-            --crit:#f2776b; --crit-soft:rgba(224,72,60,0.18);
-            --c1:#2f6fed; --c2:#e3b341; --c3:#8b5cf6; --c4:#4cc38a;
-        }
+
         *{box-sizing:border-box}
         html,body{height:100%}
-        body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+        body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+             font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}
         button,input,select,textarea{font:inherit;color:inherit}
-        a{color:var(--accent-ink)}
+
+        /* Browser defaults that are blue unless they are told otherwise. Left
+           alone these paint links, tick boxes, sliders, carets, the selection
+           highlight and every native control in the user agent blue, which no
+           amount of token work reaches. */
+        a{color:var(--primary-fg);text-decoration:none}
+        a:hover{text-decoration:underline}
+        a:visited{color:var(--primary-fg)}
+        input,textarea,select{accent-color:var(--primary);caret-color:var(--primary)}
+        input[type=checkbox],input[type=radio]{width:16px;height:16px}
+        ::selection{background:rgba(47,111,237,.35);color:#fff}
+        mark{background:rgba(217,158,11,.30);color:var(--text)}
+        :focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+        ::-webkit-scrollbar{width:10px;height:10px}
+        ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:6px;
+                                  border:2px solid transparent;background-clip:content-box}
+        ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.24);background-clip:content-box}
 
         /* ============ shell ============ */
-        .app{display:grid;grid-template-columns:236px 1fr;height:100vh;overflow:hidden}
-        .rail{background:var(--rail);color:#cfdde4;display:flex;flex-direction:column;overflow-y:auto}
-        .brand{padding:20px 20px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.07)}
-        .brand .mark{width:28px;height:28px;border-radius:7px;background:linear-gradient(150deg,var(--accent),#0b5f74);display:grid;place-items:center;color:#fff;font-family:var(--serif);font-size:16px;font-weight:700;flex:none}
-        .brand .name{font-family:var(--serif);font-size:17px;font-weight:600;color:#fff;letter-spacing:-.01em}
-        .brand .sub{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:#6d8593}
-        nav{padding:14px 10px;flex:1}
-        .navgroup{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#5c7280;padding:14px 10px 6px}
-        .nav{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;padding:8px 10px;border-radius:var(--r);color:#b6c9d2;cursor:pointer;text-align:left;font-size:13.5px;text-decoration:none}
-        .nav:hover{background:rgba(255,255,255,.06);color:#fff}
-        .nav[aria-current="true"]{background:var(--accent);color:#fff;font-weight:600}
-        .nav .ic{width:16px;text-align:center;opacity:.9;flex:none}
-        .nav .badge{margin-left:auto;font-family:var(--mono);font-size:10.5px;background:rgba(255,255,255,.13);padding:1px 6px;border-radius:9px}
-        .nav[aria-current="true"] .badge{background:rgba(0,0,0,.22)}
-        .railfoot{padding:12px 16px;border-top:1px solid rgba(255,255,255,.07);font-size:12px;color:#7d939f;display:flex;align-items:center;gap:9px}
-        .avatar{width:26px;height:26px;border-radius:50%;background:var(--c3);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:700;flex:none}
+        .app{display:grid;grid-template-columns:220px 1fr;height:100dvh;overflow:hidden}
+        .rail{background:var(--sidebar-bg);border-right:1px solid var(--border);
+              color:var(--text-dim);display:flex;flex-direction:column;overflow-y:auto}
+        .brand{padding:16px 14px 12px;display:flex;align-items:center;gap:9px}
+        .brand .mark{width:28px;height:28px;border-radius:var(--radius-xs);background:var(--primary);
+                     display:grid;place-items:center;color:#fff;font-size:13px;font-weight:700;flex:none}
+        .brand .name{font-size:13.5px;font-weight:600;color:var(--text);line-height:1.25}
+        .brand .sub{font-size:10.5px;font-weight:400;color:var(--text-mute);line-height:1.3}
+        nav{padding:4px 8px 12px;flex:1}
+        .navgroup{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+                  color:var(--text-faint);padding:14px 10px 5px}
+        .nav{display:flex;align-items:center;gap:9px;width:100%;background:none;border:1px solid transparent;
+             padding:7px 10px;border-radius:var(--radius-xs);color:var(--text-dim);cursor:pointer;
+             text-align:left;font-size:13px;font-weight:500;line-height:18px;text-decoration:none;
+             box-shadow:inset 0 0 0 0 transparent;
+             transition:background .12s,color .12s,box-shadow .12s;user-select:none}
+        .nav:hover{background:var(--panel-hover);color:var(--text);text-decoration:none}
+        /* The current item is a lifted slab with a blue left edge, exactly as in
+           the console. It used to be a solid saturated blue block, which is what
+           made the whole mailbox read as a blue product. */
+        .nav[aria-current="true"]{background:var(--panel-3);color:#fff;font-weight:600;
+                                  box-shadow:inset 3px 0 0 var(--primary)}
+        .nav .ic{width:16px;text-align:center;opacity:.85;flex:none}
+        .nav[aria-current="true"] .ic{opacity:1}
+        .nav .badge{margin-left:auto;font-size:10.5px;font-weight:600;padding:0 5px;border-radius:3px;
+                    background:rgba(255,255,255,.10);color:var(--text-dim);
+                    font-variant-numeric:tabular-nums;line-height:16px}
+        .nav[aria-current="true"] .badge{background:rgba(255,255,255,.18);color:#fff}
+        .railfoot{margin:auto 8px 10px;padding:7px 8px;display:flex;align-items:center;gap:9px;
+                  border-radius:var(--radius-xs);background:var(--panel);border:1px solid var(--border);
+                  font-size:12px;color:var(--text-dim);min-width:0}
+        .railfoot span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .avatar{width:26px;height:26px;border-radius:50%;background:var(--panel-4);color:var(--text);
+                display:grid;place-items:center;font-size:11px;font-weight:700;flex:none}
 
         .main{display:flex;flex-direction:column;min-width:0;overflow:hidden}
-        .topbar{background:var(--surface);border-bottom:1px solid var(--line);padding:11px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:none}
-        .topbar h1{font-family:var(--serif);font-size:20px;font-weight:600;margin:0;letter-spacing:-.01em}
+        .topbar{background:var(--panel-2);border-bottom:1px solid var(--border);padding:10px 16px;
+                display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:none;min-height:52px}
+        .topbar h1{font-size:18px;font-weight:600;margin:0;letter-spacing:-.01em;color:var(--text)}
         .spacer{margin-left:auto}
-        .search{flex:1;min-width:180px;max-width:420px;padding:7px 11px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+        .search{flex:1;min-width:180px;max-width:420px;padding:6px 10px;min-height:32px;
+                background:var(--field-bg);border:1px solid var(--border-strong);
+                border-radius:var(--radius-xs);color:var(--text);font-size:13px;line-height:18px;outline:none;
+                transition:border-color .12s,box-shadow .12s,background .12s}
+        .search::placeholder{color:var(--text-faint)}
+        .search:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(47,111,237,.25);
+                      background:var(--field-bg-focus)}
 
         /* ============ atoms ============ */
-        .btn{background:var(--surface);border:1px solid var(--line);padding:7px 14px;border-radius:var(--r);cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:7px}
-        .btn:hover{border-color:var(--accent);color:var(--accent-ink)}
-        .btn.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
-        .btn.pri:hover{background:var(--accent-ink);color:#fff}
-        .btn.sm{padding:4px 9px;font-size:12px}
-        .btn:disabled{opacity:.55;cursor:not-allowed}
-        .btn:focus-visible,.nav:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.fold:focus-visible,.msg:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-        .pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:20px;white-space:nowrap}
-        .pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
-        .pill.ok{background:var(--good-soft);color:var(--good)}
-        .pill.wa{background:var(--warn-soft);color:var(--warn)}
-        .pill.nu{background:var(--surface-2);color:var(--ink-2)}
-        .pill.ac{background:var(--accent-soft);color:var(--accent-ink)}
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+             padding:6px 14px;min-height:32px;border-radius:var(--radius-xs);
+             border:1px solid var(--border-strong);background:var(--panel-3);color:var(--text);
+             font-family:inherit;font-size:13px;font-weight:500;line-height:18px;cursor:pointer;
+             white-space:nowrap;transition:background .12s,border-color .12s,opacity .12s}
+        .btn:hover{background:var(--panel-4);border-color:rgba(255,255,255,.26)}
+        .btn:active{background:#2c2c2c}
+        .btn:disabled{opacity:.45;cursor:not-allowed}
+        .btn.pri{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600}
+        .btn.pri:hover{background:var(--primary-hover);border-color:var(--primary-hover);color:#fff}
+        .btn.pri:active{background:#2861d6;border-color:#2861d6}
+        .btn.sm{padding:2px 9px;min-height:26px;font-size:12px;border-radius:3px;line-height:18px}
+        /* .btn.sm is two classes and would otherwise win on specificity and put
+           padding-right back to 9px, which ran the label under the chevron. */
+        select.btn,select.btn.sm{appearance:none;padding-right:26px;
+            background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4.5L6 8.5L10 4.5' stroke='%239a9a9a' stroke-width='1.6' fill='none' stroke-linecap='round'/></svg>");
+            background-repeat:no-repeat;background-position:right 8px center}
+        .btn:focus-visible,.nav:focus-visible,.fold:focus-visible,.msg:focus-visible,
+        input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+
+        .pill{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;
+              letter-spacing:.05em;text-transform:uppercase;padding:1px 7px;border-radius:3px;
+              border:1px solid transparent;white-space:nowrap;line-height:17px}
+        .pill::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;flex:none}
+        .pill.ok{color:var(--success-fg);background:rgba(31,157,85,.16);border-color:rgba(31,157,85,.40)}
+        .pill.wa{color:var(--warning-fg);background:rgba(217,158,11,.14);border-color:rgba(217,158,11,.34)}
+        .pill.nu{color:var(--text-mute);background:rgba(255,255,255,.05);border-color:var(--border)}
+        /* .ac carries the sending address, not a status word, and an email
+           address shouted in caps with letter spacing is harder to read. */
+        .pill.ac{color:var(--primary-fg);background:rgba(47,111,237,.14);border-color:rgba(47,111,237,.34);
+                 text-transform:none;letter-spacing:0;font-size:11.5px}
         .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
-        .muted{color:var(--ink-3)}
+        .muted{color:var(--text-mute)}
 
         /* ============ mail 3-pane ============ */
         .mail{display:grid;grid-template-columns:186px 340px 1fr;flex:1;min-height:0}
-        .folders{border-right:1px solid var(--line);padding:14px 8px;overflow-y:auto;background:var(--surface)}
-        .fold{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--ink-2);width:100%;background:none;border:0;text-align:left}
-        .fold:hover{background:var(--surface-2)}
-        .fold.on{background:var(--accent-soft);color:var(--accent-ink);font-weight:600}
+        .folders{border-right:1px solid var(--border);padding:10px 8px;overflow-y:auto;background:var(--panel-2)}
+        .fold{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:var(--radius-xs);
+              cursor:pointer;font-size:13px;font-weight:500;line-height:18px;color:var(--text-dim);
+              width:100%;background:none;border:1px solid transparent;text-align:left;
+              box-shadow:inset 0 0 0 0 transparent;transition:background .12s,color .12s,box-shadow .12s}
+        .fold:hover{background:var(--panel-hover);color:var(--text)}
+        .fold.on{background:var(--panel-3);color:#fff;font-weight:600;box-shadow:inset 3px 0 0 var(--primary)}
         .fold .fname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .fold .ct{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
-        .fold.on .ct{color:var(--accent-ink)}
-        .list{border-right:1px solid var(--line);overflow-y:auto;background:var(--surface);display:flex;flex-direction:column}
-        .msg{padding:12px 15px;border-bottom:1px solid var(--line-2);cursor:pointer;text-align:left;background:none;border-left:0;border-right:0;border-top:0;width:100%;display:block;color:inherit;font:inherit}
-        .msg:hover{background:var(--surface-2)}
-        .msg.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
-        .msg .r1{display:flex;align-items:baseline;gap:8px}
-        .msg .from{font-weight:650;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .msg .when{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);flex:none}
-        .msg .subj{font-size:12.5px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .msg .prev{font-size:12px;color:var(--ink-3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .msg.unread .from::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:6px}
-        .msg .marks{float:right;color:var(--ink-3);font-size:11px}
-        .listfoot{padding:11px 15px;display:flex;align-items:center;gap:9px;border-top:1px solid var(--line-2);font-size:12px;color:var(--ink-3);flex:none}
+        .fold .ct{font-family:var(--mono);font-size:11px;color:var(--text-mute);font-variant-numeric:tabular-nums}
+        .fold.on .ct{color:var(--text-dim)}
 
-        .reader{display:flex;flex-direction:column;background:var(--surface);min-width:0;overflow:hidden}
-        .rhead{padding:20px 26px 0;flex:none}
-        .rhead h2{font-family:var(--serif);font-size:21px;margin:0 0 14px;font-weight:600;letter-spacing:-.01em;word-wrap:break-word}
-        .rmeta{display:flex;align-items:center;gap:11px;padding-bottom:14px;border-bottom:1px solid var(--line-2);flex-wrap:wrap}
+        .list{border-right:1px solid var(--border);overflow-y:auto;background:var(--panel);
+              display:flex;flex-direction:column}
+        .msg{padding:11px 14px;border-bottom:1px solid var(--border-soft);cursor:pointer;text-align:left;
+             background:none;border-left:0;border-right:0;border-top:0;width:100%;display:block;
+             color:inherit;font:inherit;box-shadow:inset 0 0 0 0 transparent;
+             transition:background .12s,box-shadow .12s}
+        .msg:hover{background:rgba(255,255,255,.04)}
+        .msg.on{background:var(--panel-3);box-shadow:inset 3px 0 0 var(--primary)}
+        .msg .r1{display:flex;align-items:baseline;gap:8px}
+        /* Read and unread differ by weight and by the dot, not by colour alone. */
+        .msg .from{font-weight:500;font-size:13px;color:var(--text-dim);flex:1;
+                   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .msg.unread .from{font-weight:700;color:var(--text)}
+        .msg .when{font-family:var(--mono);font-size:10.5px;color:var(--text-mute);flex:none;
+                   font-variant-numeric:tabular-nums}
+        .msg .subj{font-size:12.5px;color:var(--text-dim);margin-top:2px;
+                   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .msg.unread .subj{color:var(--text)}
+        .msg .prev{font-size:12px;color:var(--text-mute);margin-top:2px;
+                   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .msg.unread .from::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;
+                                  background:var(--primary);margin-right:6px;vertical-align:middle}
+        .msg .marks{float:right;color:var(--text-mute);font-size:11px}
+        .listfoot{padding:9px 14px;display:flex;align-items:center;gap:8px;
+                  border-top:1px solid var(--border);background:var(--panel-2);
+                  font-size:12px;color:var(--text-mute);flex:none}
+
+        .reader{display:flex;flex-direction:column;background:var(--panel);min-width:0;overflow:hidden}
+        .rhead{padding:18px 22px 0;flex:none}
+        .rhead h2{font-size:18px;margin:0 0 14px;font-weight:600;letter-spacing:-.01em;
+                  color:var(--text);word-wrap:break-word}
+        .rmeta{display:flex;align-items:center;gap:10px;padding-bottom:13px;
+               border-bottom:1px solid var(--border);flex-wrap:wrap}
         .rmeta .who{min-width:0}
-        .rmeta .who b{display:block;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .banner{background:var(--warn-soft);border:1px solid var(--warn);color:var(--warn);padding:8px 13px;border-radius:var(--r);font-size:12.5px;margin:14px 0 0;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
-        .banner .btn{background:transparent;border-color:var(--warn);color:var(--warn)}
+        .rmeta .who b{display:block;font-weight:600;color:var(--text);
+                      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .banner{background:rgba(217,158,11,.10);border:1px solid rgba(217,158,11,.32);
+                border-left:3px solid var(--warning);color:var(--warning-fg);
+                padding:9px 12px;border-radius:var(--radius-xs);font-size:12.5px;margin:14px 0 0;
+                display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+        .banner .btn{background:transparent;border-color:rgba(217,158,11,.45);color:var(--warning-fg)}
+        .banner .btn:hover{background:rgba(217,158,11,.14);border-color:rgba(217,158,11,.65)}
         .atts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-        .att{border:1px solid var(--line);border-radius:var(--r);padding:6px 10px;font-size:12px;color:var(--ink-2);background:var(--surface-2);text-decoration:none;display:inline-block}
-        .att:hover{border-color:var(--accent);color:var(--ink)}
+        .att{border:1px solid var(--border);border-radius:var(--radius-xs);padding:6px 10px;
+             min-height:32px;display:inline-flex;align-items:center;gap:6px;font-size:12px;
+             color:var(--text-dim);background:var(--panel-3);text-decoration:none}
+        .att:hover{background:var(--panel-4);border-color:var(--border-strong);
+                   color:var(--text);text-decoration:none}
         /* The reading frame fills what is left. It cannot report its own height,
            because it runs with scripting switched off, so it scrolls internally. */
-        .rframe{flex:1;min-height:0;border:0;width:100%;margin-top:14px;background:var(--surface)}
-        .empty{display:grid;place-items:center;height:100%;color:var(--ink-3);text-align:center;padding:40px}
-        .empty .big{font-size:30px;display:block;margin-bottom:8px;opacity:.5}
+        .rframe{flex:1;min-height:0;border:0;width:100%;margin-top:14px;background:var(--panel)}
+        /* Flex column, not grid. Under place-items:center the glyph and the
+           sentence after it became two separate grid rows, so on a tall pane the
+           icon sat a third of the way down and its caption sat two thirds down,
+           with several hundred pixels of nothing between them. */
+        .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+               height:100%;color:var(--text-mute);text-align:center;padding:40px 20px;font-size:13px}
+        .empty .big{font-size:26px;display:block;margin-bottom:8px;opacity:.4;line-height:1}
+        /* A failure used to render as the same grey hollow circle as an empty
+           folder, so "the mail server is down" and "there is no mail" looked
+           identical. It now says which one it is, in words and in colour, and
+           offers the one action that helps. */
+        .errstate{display:flex;flex-direction:column;align-items:center;justify-content:center;
+                  gap:9px;height:100%;padding:32px 20px;text-align:center}
+        .errstate .big{font-size:24px;line-height:1;color:var(--danger-fg)}
+        .errstate .head{font-size:13px;font-weight:600;color:var(--text)}
+        .errstate .why{font-size:12.5px;color:var(--text-mute);max-width:34ch;line-height:1.55}
+        .loadstate{display:flex;flex-direction:column;align-items:center;justify-content:center;
+                   gap:8px;height:100%;padding:32px 20px;color:var(--text-mute);font-size:12.5px}
+        .spin{width:18px;height:18px;border-radius:50%;border:2px solid var(--border-strong);
+              border-top-color:var(--primary);animation:spin .7s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @media(prefers-reduced-motion:reduce){.spin{animation:none}}
 
         /* ============ compose ============ */
-        .backdrop{position:fixed;inset:0;background:rgba(6,14,18,.5);display:none;place-items:center;z-index:40;padding:20px}
+        .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;place-items:center;
+                  z-index:150;padding:24px}
         .backdrop.open{display:grid}
-        .sheet{background:var(--surface);border:1px solid var(--line);border-radius:10px;width:min(680px,100%);max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
-        .sheet-h{padding:14px 18px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:12px}
-        .sheet-h h3{margin:0;font-size:14px;font-weight:650}
+        .sheet{background:var(--panel);border:1px solid var(--border-strong);border-radius:var(--radius);
+               box-shadow:var(--shadow-pop);width:min(680px,100%);max-height:88vh;
+               display:flex;flex-direction:column;overflow:hidden;
+               animation:fade-up .16s cubic-bezier(.2,.7,.3,1)}
+        @keyframes fade-up{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+        .sheet-h{padding:13px 18px;border-bottom:1px solid var(--border);background:var(--panel-2);
+                 display:flex;align-items:center;gap:12px}
+        .sheet-h h3{margin:0;font-size:15px;font-weight:600}
         .sheet-b{padding:18px;overflow-y:auto}
-        .sheet-f{padding:13px 18px;border-top:1px solid var(--line-2);display:flex;gap:9px;align-items:center}
-        .field{margin-bottom:13px}
-        .field label{display:block;font-size:12px;font-weight:600;margin-bottom:5px;color:var(--ink-2)}
-        .field input,.field textarea{width:100%;padding:8px 11px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
-        .field textarea{resize:vertical;font-family:var(--sans)}
+        .sheet-f{padding:12px 18px;border-top:1px solid var(--border);background:var(--panel-2);
+                 display:flex;gap:8px;align-items:center}
+        .field{margin-bottom:12px}
+        .field label{display:block;font-size:11.5px;font-weight:600;margin-bottom:5px;color:var(--text-dim)}
+        .field input,.field textarea{width:100%;padding:6px 10px;min-height:32px;
+                background:var(--field-bg);border:1px solid var(--border-strong);
+                border-radius:var(--radius-xs);color:var(--text);font-size:13px;line-height:18px;
+                outline:none;transition:border-color .12s,box-shadow .12s,background .12s}
+        .field input::placeholder,.field textarea::placeholder{color:var(--text-faint)}
+        .field input:focus,.field textarea:focus{border-color:var(--primary);
+                box-shadow:0 0 0 2px rgba(47,111,237,.25);background:var(--field-bg-focus)}
+        .field textarea{resize:vertical;font-family:var(--sans);min-height:120px;padding:8px 10px}
 
-        #toasts{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:60}
-        .toast{background:var(--rail);color:#fff;padding:9px 14px;border-radius:var(--r);font-size:13px;max-width:340px;box-shadow:0 6px 20px rgba(0,0,0,.24)}
-        .toast.bad{background:var(--crit)}
+        #toasts{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;
+                z-index:200;max-width:400px}
+        .toast{padding:10px 13px;border-radius:var(--radius-xs);background:#2a2a2a;color:var(--text);
+               border:1px solid var(--border-strong);border-left:3px solid var(--primary);
+               box-shadow:var(--shadow-pop);font-size:13px;
+               animation:toast-in .18s cubic-bezier(.2,.9,.3,1)}
+        .toast.bad{border-left-color:var(--danger);color:var(--danger-fg)}
+        @keyframes toast-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
-        /* Three panes do not fit a phone, so it becomes one pane that swaps between
-           the list and the message. .reading is set by mail.js when one is open. */
+        /* ============ responsive ============
+           Mirrors the console: 1100 folds three panes into one, 900 turns the
+           rail into a horizontal scroller that keeps its labels, 760 lifts the
+           small end of the type scale and the tap targets. */
         .btnback{display:none}
         @media(max-width:1100px){
             .mail{grid-template-columns:1fr}
@@ -158,8 +309,64 @@
             .mail.reading .reader{display:flex}
             .btnback{display:inline-flex}
         }
-        @media(max-width:820px){.app{grid-template-columns:64px 1fr}
-            .brand .name,.brand .sub,.nav span:not(.ic),.navgroup,.railfoot span{display:none}}
+        @media(max-width:900px){
+            /* An icon with no word next to it is a guess, not navigation, so the
+               rail keeps its labels and scrolls sideways instead of shrinking. */
+            .app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+            .rail{flex-direction:row;align-items:center;gap:4px;overflow-x:auto;overflow-y:hidden;
+                  border-right:0;border-bottom:1px solid var(--border);padding:6px 8px;
+                  scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+            .rail::-webkit-scrollbar{height:0}
+            .brand{padding:0 10px 0 4px;flex:0 0 auto}
+            .brand .name,.brand .sub{display:none}
+            nav{display:flex;align-items:center;gap:4px;padding:0;flex:0 0 auto}
+            .navgroup{display:none}
+            .nav{flex:0 0 auto;width:auto;scroll-snap-align:start;padding:9px 12px;
+                 min-height:40px;border-radius:var(--radius-sm);white-space:nowrap}
+            .railfoot{margin:0 0 0 auto;flex:0 0 auto;background:none;border:0;padding:0 4px}
+            .railfoot span{display:none}
+
+            /* The title, the search and the actions each take a full row rather
+               than wrapping into ragged fragments, and the buttons share the
+               width evenly instead of one of them sitting alone at 40%. */
+            .topbar{padding:10px 12px;gap:8px}
+            .topbar h1{width:100%}
+            .search{flex:1 1 100%;max-width:none;min-width:0}
+            /* Sized to their labels, not stretched. Stretching made the primary
+               button a full half-row slab of accent colour, which is the exact
+               thing this pass is removing everywhere else. The spacer keeps it
+               on the right so the thumb reaches it. */
+            .topbar .btn{flex:0 0 auto}
+        }
+        @media(max-width:760px){
+            body{font-size:13.5px}
+            .btn{min-height:38px}
+            .btn.sm{min-height:36px;font-size:12.5px;padding:4px 11px}
+            .search,.field input,.field textarea{min-height:40px;font-size:16px} /* 16px stops iOS zooming on focus */
+            .att{min-height:38px;font-size:12.5px}
+            .fold{min-height:44px}
+            /* The sender initial is decoration. On a phone it wraps onto a line
+               of its own above the name it belongs to, which is worse than not
+               having it. */
+            .rmeta .avatar{display:none}
+            .rhead{padding:16px 14px 0}
+            /* Three lines of text at desktop padding read as one solid block on a
+               phone. The row needs the air and a border that is actually visible. */
+            .msg{min-height:44px;padding:13px 14px;border-bottom-color:var(--border)}
+            .pill{font-size:11px}
+            .msg .when{font-size:11.5px}
+            .msg .subj{font-size:13px}
+            .msg .prev{font-size:12.5px}
+            .listfoot{font-size:12.5px}
+            .brand .sub{font-size:11.5px}
+            /* A centred box on a phone leaves content under the fold with no way
+               to reach it, so the sheets become full height. */
+            .backdrop{padding:0;place-items:stretch}
+            .sheet{width:100%;max-width:none;max-height:100dvh;border-radius:0;border:0}
+            .sheet-f{position:sticky;bottom:0}
+            .sheet-f .btn{flex:1 1 auto;min-height:42px}
+            #toasts{right:10px;left:10px;bottom:10px;max-width:none}
+        }
     </style>
 </head>
 <body>
