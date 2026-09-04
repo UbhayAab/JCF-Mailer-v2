@@ -1,3 +1,8 @@
+> **This is not the live source.** It is a single snapshot pushed on 27 August 2026,
+> kept as history of the v2 rewrite. The repository that runs in production, takes
+> pull requests and is kept current is
+> **https://github.com/UbhayAab/JCF-Mailer**. Clone that one.
+
 # JCF Mailer - Campaign Studio
 
 The email platform for **Jarurat Care Foundation**. One Spring Boot application that
