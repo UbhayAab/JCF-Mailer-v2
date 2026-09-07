@@ -19,6 +19,8 @@ public class Campaign {
     private String preheader;
     private String fromName;
     private String replyTo;
+    private String cc;
+    private String bcc;
 
     @Column(columnDefinition = "TEXT")
     private String htmlBody;
@@ -57,6 +59,8 @@ public class Campaign {
     public String getPreheader() { return preheader; }
     public String getFromName() { return fromName; }
     public String getReplyTo() { return replyTo; }
+    public String getCc() { return cc; }
+    public String getBcc() { return bcc; }
     public String getHtmlBody() { return htmlBody; }
     public Long getListId() { return listId; }
     public String getStatus() { return status; }
@@ -80,6 +84,8 @@ public class Campaign {
     public void setPreheader(String v) { this.preheader = v; }
     public void setFromName(String v) { this.fromName = v; }
     public void setReplyTo(String v) { this.replyTo = v; }
+    public void setCc(String v) { this.cc = v; }
+    public void setBcc(String v) { this.bcc = v; }
     public void setHtmlBody(String v) { this.htmlBody = v; }
     public void setListId(Long v) { this.listId = v; }
     public void setStatus(String v) { this.status = v; }

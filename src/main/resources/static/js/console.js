@@ -297,7 +297,7 @@ let listCache = [];
 
 function newCampaign() {
   currentCampaignId = null;
-  ['cName', 'cSubject', 'cHtml', 'cFromName', 'cReplyTo', 'cPreheader', 'cTestTo'].forEach(id => $(id).value = '');
+  ['cName', 'cSubject', 'cHtml', 'cFromName', 'cReplyTo', 'cCc', 'cBcc', 'cPreheader', 'cTestTo'].forEach(id => $(id).value = '');
   $('cList').value = '';
   $('cTrackOpens').checked = true;
   $('cTrackClicks').checked = true;
@@ -328,6 +328,8 @@ async function openCampaign(id) {
   $('cHtml').value = d.htmlBody || '';
   $('cFromName').value = d.fromName || '';
   $('cReplyTo').value = d.replyTo || '';
+  $('cCc').value = d.cc || '';
+  $('cBcc').value = d.bcc || '';
   $('cPreheader').value = d.preheader || '';
   $('cTrackOpens').checked = !!d.trackOpens;
   $('cTrackClicks').checked = !!d.trackClicks;
@@ -350,7 +352,7 @@ async function openCampaign(id) {
 
   const editable = d.editable;
   composerEditable = editable;
-  ['cName', 'cSubject', 'cHtml', 'cFromName', 'cReplyTo', 'cPreheader', 'cList'].forEach(f => $(f).disabled = !editable);
+  ['cName', 'cSubject', 'cHtml', 'cFromName', 'cReplyTo', 'cCc', 'cBcc', 'cPreheader', 'cList'].forEach(f => $(f).disabled = !editable);
   showComposerLock(editable ? null : d.status);
 
   updatePreview();
@@ -561,13 +563,15 @@ function showComposerLock(status) {
 async function duplicateCampaign() {
   const name = ($('cName').value.trim() || 'Campaign') + ' (copy)';
   const html = $('cHtml').value, subject = $('cSubject').value,
-        pre = $('cPreheader').value, from = $('cFromName').value, reply = $('cReplyTo').value;
+        pre = $('cPreheader').value, from = $('cFromName').value, reply = $('cReplyTo').value,
+        cc = $('cCc').value, bcc = $('cBcc').value;
   currentCampaignId = null;
   composerEditable = true;
   showComposerLock(null);
-  ['cName','cSubject','cHtml','cFromName','cReplyTo','cPreheader','cList'].forEach(f => $(f).disabled = false);
+  ['cName','cSubject','cHtml','cFromName','cReplyTo','cCc','cBcc','cPreheader','cList'].forEach(f => $(f).disabled = false);
   $('cName').value = name; $('cSubject').value = subject; $('cHtml').value = html;
   $('cPreheader').value = pre; $('cFromName').value = from; $('cReplyTo').value = reply;
+  $('cCc').value = cc; $('cBcc').value = bcc;
   if (await saveCampaign(false)) toast('Copied into a new draft', 'ok');
 }
 
@@ -937,7 +941,8 @@ async function saveCampaign(notify) {
       id: currentCampaignId, name,
       subject: $('cSubject').value, htmlBody: $('cHtml').value,
       preheader: $('cPreheader').value, fromName: $('cFromName').value,
-      replyTo: $('cReplyTo').value, listId: $('cList').value || '',
+      replyTo: $('cReplyTo').value, cc: $('cCc').value, bcc: $('cBcc').value,
+      listId: $('cList').value || '',
       trackOpens: $('cTrackOpens').checked, trackClicks: $('cTrackClicks').checked
     });
     currentCampaignId = res.id;
@@ -1731,8 +1736,27 @@ async function verifyAdhoc() {
       + r.risky + ' risky, ' + r.undeliverable + ' undeliverable');
     $('verifyAdhoc').value = '';
     verifyPage = 0;
-    loadVerifyResults();
-    loadVerifySummary();
+    await loadVerifyResults();
+    await loadVerifySummary();
+
+    if (r.rows && r.rows.length) {
+      const newHtml = r.rows.map(r =>
+        '<tr style="background:var(--primary-soft)"><td class="mono">' + esc(r.email) + '</td>'
+        + '<td>' + verdictPill(r.verdict, r.label) + '</td>'
+        + '<td class="truncate">' + esc(r.reason) + '</td>'
+        + '<td>' + mark(r.syntax) + '</td><td>' + mark(r.mx) + '</td><td>' + mark(r.mailbox) + '</td>'
+        + '<td class="mono nowrap">' + esc(r.checkedAt || 'Just now') + '</td></tr>'
+      ).join('');
+
+      const bodyEl = $('verifyBody');
+      if (bodyEl) {
+        if (bodyEl.querySelector('td[colspan]')) {
+          bodyEl.innerHTML = newHtml;
+        } else {
+          bodyEl.insertAdjacentHTML('afterbegin', newHtml);
+        }
+      }
+    }
   } catch (e) { toast(e.message, 'err'); }
 }
 

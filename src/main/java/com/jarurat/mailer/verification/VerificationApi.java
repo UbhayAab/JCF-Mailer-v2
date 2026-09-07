@@ -203,7 +203,7 @@ public class VerificationApi {
                     .map(Subscriber::getEmail)
                     .filter(e -> e != null && !e.isBlank())
                     .toList();
-            Set<String> safe = verification.safeToSend(emails);
+            Set<String> safe = verification.verifiedClean(emails);
 
             for (Subscriber s : chunk) {
                 if (s.getEmail() == null || !safe.contains(s.getEmail().toLowerCase())) continue;

@@ -368,6 +368,32 @@ public class VerificationService {
         return wanted;
     }
 
+    /**
+     * Strict check for "Export clean list": requires an explicit, non-expired
+     * verification result with a DELIVERABLE (or RISKY if allowRisky is enabled)
+     * verdict. Unverified or never-checked addresses are excluded.
+     */
+    public Set<String> verifiedClean(Collection<String> emails) {
+        Set<String> wanted = normalised(emails);
+        if (wanted.isEmpty()) return Set.of();
+
+        LocalDateTime since = LocalDateTime.now().minusDays(freshDays);
+        Set<String> acceptable = allowRisky
+                ? Set.of(Verdict.DELIVERABLE.name(), Verdict.RISKY.name())
+                : Set.of(Verdict.DELIVERABLE.name());
+
+        Set<String> clean = new HashSet<>();
+        for (List<String> chunk : chunks(new ArrayList<>(wanted))) {
+            for (VerificationResult row : results.findAllById(chunk)) {
+                if (row.getCheckedAt() != null && row.getCheckedAt().isAfter(since)
+                        && acceptable.contains(row.getVerdict())) {
+                    clean.add(row.getEmail());
+                }
+            }
+        }
+        return clean;
+    }
+
     public boolean isSafeToSend(String email) {
         return !safeToSend(List.of(EmailVerifier.normalise(email))).isEmpty();
     }
