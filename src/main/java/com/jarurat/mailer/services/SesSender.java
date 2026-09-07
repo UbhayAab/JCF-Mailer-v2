@@ -86,7 +86,12 @@ public class SesSender {
     // ------------------------------------------------------------------
 
     public record Outgoing(String to, String subject, String html, String fromName,
-                           String replyTo, String unsubscribeUrl) {}
+                           String replyTo, String unsubscribeUrl, String cc, String bcc) {
+        public Outgoing(String to, String subject, String html, String fromName,
+                        String replyTo, String unsubscribeUrl) {
+            this(to, subject, html, fromName, replyTo, unsubscribeUrl, null, null);
+        }
+    }
 
     public String send(Outgoing out) {
         RuntimeException last = null;
@@ -130,10 +135,16 @@ public class SesSender {
         String name = blankToNull(out.fromName()) != null ? out.fromName() : defaultFromName;
         String reply = blankToNull(out.replyTo()) != null ? out.replyTo() : defaultReplyTo;
 
+        Destination.Builder destination = Destination.builder().toAddresses(out.to());
+        java.util.List<String> ccAddrs = splitAddresses(out.cc());
+        if (!ccAddrs.isEmpty()) destination.ccAddresses(ccAddrs);
+        java.util.List<String> bccAddrs = splitAddresses(out.bcc());
+        if (!bccAddrs.isEmpty()) destination.bccAddresses(bccAddrs);
+
         SendEmailRequest.Builder request = SendEmailRequest.builder()
                 .fromEmailAddress(name == null ? fromEmail
                         : "\"" + name.replace("\"", "") + "\" <" + fromEmail + ">")
-                .destination(Destination.builder().toAddresses(out.to()).build())
+                .destination(destination.build())
                 .content(EmailContent.builder().simple(message.build()).build());
 
         if (reply != null && !reply.isBlank()) request.replyToAddresses(reply);
@@ -147,6 +158,14 @@ public class SesSender {
             request.configurationSetName(configurationSet);
         }
         return request.build();
+    }
+
+    private java.util.List<String> splitAddresses(String text) {
+        if (text == null || text.isBlank()) return java.util.List.of();
+        return java.util.Arrays.stream(text.split("[,;\\s]+"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty() && EMAIL_OK.matcher(s).matches())
+                .toList();
     }
 
     // ------------------------------------------------------------------
