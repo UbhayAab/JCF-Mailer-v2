@@ -61,6 +61,8 @@ public class CampaignApi {
         body.put("preheader", nz(campaign.getPreheader()));
         body.put("fromName", nz(campaign.getFromName()));
         body.put("replyTo", nz(campaign.getReplyTo()));
+        body.put("cc", nz(campaign.getCc()));
+        body.put("bcc", nz(campaign.getBcc()));
         body.put("trackOpens", campaign.isTrackOpens());
         body.put("trackClicks", campaign.isTrackClicks());
         body.put("links", service.linkBreakdown(id));
@@ -77,6 +79,8 @@ public class CampaignApi {
                                   @RequestParam(required = false) String preheader,
                                   @RequestParam(required = false) String fromName,
                                   @RequestParam(required = false) String replyTo,
+                                  @RequestParam(required = false) String cc,
+                                  @RequestParam(required = false) String bcc,
                                   @RequestParam(required = false) Long listId,
                                   @RequestParam(defaultValue = "true") boolean trackOpens,
                                   @RequestParam(defaultValue = "true") boolean trackClicks) {
@@ -104,6 +108,8 @@ public class CampaignApi {
         campaign.setPreheader(preheader);
         campaign.setFromName(fromName);
         campaign.setReplyTo(replyTo);
+        campaign.setCc(cc);
+        campaign.setBcc(bcc);
         campaign.setListId(listId);
         campaign.setTrackOpens(trackOpens);
         campaign.setTrackClicks(trackClicks);

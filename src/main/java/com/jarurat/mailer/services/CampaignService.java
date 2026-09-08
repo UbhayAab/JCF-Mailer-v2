@@ -211,7 +211,8 @@ public class CampaignService {
             String messageId = ses.send(new SesSender.Outgoing(
                     recipient.getEmail(), subject, html,
                     campaign.getFromName(), campaign.getReplyTo(),
-                    ses.getAppDomain() + "/api/mailer/unsubscribe?token=" + recipient.getToken()));
+                    ses.getAppDomain() + "/api/mailer/unsubscribe?token=" + recipient.getToken(),
+                    campaign.getCc(), campaign.getBcc()));
 
             recipient.setStatus("SENT");
             recipient.setSentAt(LocalDateTime.now());
@@ -271,7 +272,8 @@ public class CampaignService {
         long startedNanos = System.nanoTime();
         try {
             String messageId = ses.send(new SesSender.Outgoing(recipient, subject, html,
-                    campaign.getFromName(), campaign.getReplyTo(), null));
+                    campaign.getFromName(), campaign.getReplyTo(), null,
+                    campaign.getCc(), campaign.getBcc()));
             messageLog.recordSent(recipient, subject, messageId, campaign.getId(),
                     millisSince(startedNanos), null);
             return messageId;
